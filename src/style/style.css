@@ -1,0 +1,95 @@
+/* styles.css */
+header {
+    background-color: #1a1a1a; /* Dark, industrial vibe */
+    padding: 20px;
+    border-bottom: 2px solid #e63946; /* Red highlight resembling danger/alert */
+  }
+  
+  nav ul {
+    list-style-type: none;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  nav ul li {
+    margin: 0 10px;
+  }
+  
+  nav ul li a {
+    color: #f4f4f4;
+    text-decoration: none;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 1px;
+  }
+  
+  nav ul li a:hover {
+    color: #e63946; /* Red color on hover */
+  }
+  
+  button {
+    background-color: #e63946;
+    border: none;
+    padding: 10px 20px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #d62828; /* Darker red for hover */
+  }
+  
+
+  /* styles.css (continued) */
+.game-room {
+    background-color: #333;
+    color: #f4f4f4;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    max-width: 800px;
+    margin: 20px auto;
+  }
+  
+  .game-room h2, h3 {
+    color: #e63946;
+  }
+  
+  form input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    background-color: #1a1a1a;
+    color: white;
+  }
+  
+  form button {
+    background-color: #e63946;
+    border: none;
+    padding: 10px 20px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  form button:hover {
+    background-color: #d62828;
+  }
+  
+  ul {
+    list-style-type: none;
+  }
+  
+  ul li {
+    padding: 10px;
+    background-color: #444;
+    margin-bottom: 5px;
+    border-radius: 5px;
+  }
+  
