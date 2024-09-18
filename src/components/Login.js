@@ -10,13 +10,13 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Attempting login with:", username, password);
-
+  
     try {
       const response = await axios.post("http://localhost:5000/api/login", {
         username,
         password,
       });
-
+  
       if (response.data) {
         console.log("Login response:", response.data);
         onLogin(response.data);  // Передаем данные пользователя в App.js для изменения состояния
@@ -25,7 +25,7 @@ const Login = ({ onLogin }) => {
       console.error("Login error:", err);
       setError("Invalid username or password");
     }
-  };
+  };  
 
   return (
     <Container maxWidth="sm">

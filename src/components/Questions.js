@@ -1,58 +1,69 @@
-// src/components/Questions.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import io from 'socket.io-client';
 
-const Questions = ({ onSubmitAnswers }) => {
-  const [answers, setAnswers] = useState({
-    q1: "",
-    q2: "",
-    q3: "",
-    q4: "",
-    q5: "",
-    q6: "",
-    q7: ""
-  });
+const socket = io('http://localhost:5000');
+
+const Questions = ({ team }) => {
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Подписываемся на событие старта игры
+    socket.on('game_started', (questions) => {
+      setQuestions(questions); // Сохраняем полученные вопросы в стейт
+    });
+
+    // Очищаем слушатель при размонтировании компонента
+    return () => {
+      socket.off('game_started');
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setAnswers((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmitAnswers(answers);
+    if (Object.values(answers).length < questions.length) {
+      setError('Please answer all questions.');
+      return;
+    }
+    try {
+      await axios.post('/api/answers', { team: team.username, answers });
+      setSubmitted(true);
+    } catch (error) {
+      setError('Failed to submit answers. Please try again.');
+    }
   };
+
+  if (submitted) {
+    return <h2>Your answers have been submitted. Thank you!</h2>;
+  }
 
   return (
     <form onSubmit={handleSubmit}>
-      <div>
-        <label>1) Кто из коллег Левина сотрудничал с западными спецслужбами? / 0-10</label>
-        <input type="text" name="q1" value={answers.q1} onChange={handleChange} />
-      </div>
-      <div>
-        <label>2) В какой лаборатории они работали? / 0-5</label>
-        <input type="text" name="q2" value={answers.q2} onChange={handleChange} />
-      </div>
-      <div>
-        <label>3) Назовите псевдоним агента западных спецслужб? / 0-5</label>
-        <input type="text" name="q3" value={answers.q3} onChange={handleChange} />
-      </div>
-      <div>
-        <label>4) Под каким именем и фамилией он работал в Припяти? / 0-5</label>
-        <input type="text" name="q4" value={answers.q4} onChange={handleChange} />
-      </div>
-      <div>
-        <label>5) Какой объект, кроме ЧАЭС, интересовал западные спецслужбы? / 0-5</label>
-        <input type="text" name="q5" value={answers.q5} onChange={handleChange} />
-      </div>
-      <div>
-        <label>6) Кто писал анонимные письма в КГБ? / 0-10</label>
-        <input type="text" name="q6" value={answers.q6} onChange={handleChange} />
-      </div>
-      <div>
-        <label>7) Какую выгоду получали коллеги Левина от сотрудничества с иностранным агентом? / 0-5</label>
-        <input type="text" name="q7" value={answers.q7} onChange={handleChange} />
-      </div>
-      <button type="submit">Отправить ответы</button>
+      {questions.length > 0 ? (
+        questions.map((question, index) => (
+          <div key={index}>
+            <label>{index + 1}. {question.question}</label>
+            <input
+              type="text"
+              name={`q${index + 1}`}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        ))
+      ) : (
+        <h2>Waiting for game to start...</h2>
+      )}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <button type="submit" disabled={questions.length === 0}>Submit Answers</button>
     </form>
   );
 };
