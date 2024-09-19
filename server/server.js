@@ -11,8 +11,8 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: "http://localhost:3000",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  },
+    methods: ["GET", "POST"]
+  }
 });
 
 const PORT = 5000;
@@ -28,7 +28,58 @@ app.use(
 // Пути к файлам
 const usersFilePath = "./data/users.json";
 const teamsFilePath = "./data/teams.json";
-const answersFilePath = "./data/answers.json";
+
+
+
+const questionsFilePath = path.join(__dirname, './data/questions.json');
+const answersFilePath = path.join(__dirname, './data/answers.json');
+
+// Функция для загрузки и обработки данных ответов
+function loadAnswers() {
+  return new Promise((resolve, reject) => {
+      // Чтение файла с ответами
+      fs.readFile(answersFilePath, 'utf-8', (err, data) => {
+          if (err) {
+              // Если файла нет, возвращаем пустой массив
+              if (err.code === 'ENOENT') {
+                  console.log('Файл answers.json не найден. Возвращаю пустой массив.');
+                  resolve([]);
+              } else {
+                  console.error('Ошибка при чтении файла answers.json:', err);
+                  reject(err);
+              }
+          } else {
+              try {
+                  // Если данные успешно прочитаны, пытаемся распарсить их как JSON
+                  const parsedData = JSON.parse(data);
+                  
+                  // Если файл пуст или содержит невалидный формат, возвращаем пустой массив
+                  if (!Array.isArray(parsedData)) {
+                      console.warn('Ожидался массив ответов, но получен другой формат. Возвращаю пустой массив.');
+                      resolve([]);
+                  } else {
+                      resolve(parsedData);
+                  }
+              } catch (parseError) {
+                  // Обработка ошибки парсинга
+                  console.error('Ошибка при парсинге файла answers.json:', parseError);
+                  resolve([]);
+              }
+          }
+      });
+  });
+}
+
+// Функция для записи данных в файл answers.json
+const saveAnswersToFile = (data) => {
+  fs.writeFile(answersFilePath, JSON.stringify(data, null, 2), (err) => {
+    if (err) {
+      console.error('Ошибка при сохранении ответов:', err);
+    } else {
+      console.log('Ответы успешно сохранены в answers.json');
+    }
+  });
+};
 
 let gameQuestions = [];
 let gameDuration = 60; // Default duration in minutes
@@ -81,7 +132,6 @@ writeJsonFile('./data/answers.json', { answers: [] }).then(() => {
   console.log('Answers file initialized');
 });
 
-
 // Инициализация переменных
 let users = [];
 let gameState = {
@@ -112,64 +162,18 @@ const loadUsers = () => {
   });
 };
 
-// Инициализация answers.json для новых игр
-const initializeAnswersFile = (teams) => {
-  const initialData = {
-    answers: teams.map(team => ({
-      team: team.name,
-      answers: [],
-    })),
-  };
 
-  fs.writeFile(answersFilePath, JSON.stringify(initialData, null, 2), (err) => {
-    if (err) {
-      console.error('Ошибка при записи в файл answers.json:', err);
-      return;
-    }
-    console.log('Файл answers.json успешно инициализирован');
-  });
-};
+// Пример использования функции
+loadAnswers()
+    .then(answers => {
+        console.log('Загруженные ответы:', answers);
+    })
+    .catch(err => {
+        console.error('Ошибка при загрузке ответов:', err);
+    });
 
-// Загрузка команд из файла
-const loadTeams = (callback) => {
-  fs.readFile(teamsFilePath, "utf8", (err, data) => {
-    if (err) {
-      console.error("Ошибка при чтении teams.json:", err);
-      callback(err, null);
-      return;
-    }
+module.exports = loadAnswers;
 
-    try {
-      const teams = JSON.parse(data);
-      callback(null, teams);
-    } catch (parseErr) {
-      console.error("Ошибка при парсинге teams.json:", parseErr);
-      callback(parseErr, null);
-    }
-  });
-};
-
-// Загрузка ответов из файла
-const loadAnswers = () => {
-  fs.readFile(answersFilePath, "utf8", (err, data) => {
-    if (err) {
-      console.error("Ошибка при чтении answers.json:", err);
-      return;
-    }
-
-    if (data.trim() === "") {
-      answersList = { answers: [] };
-    } else {
-      try {
-        answersList = JSON.parse(data);
-      } catch (parseErr) {
-        console.error("Ошибка при парсинге answers.json:", parseErr);
-        answersList = { answers: [] };
-      }
-    }
-    console.log("Ответы загружены:", answersList);
-  });
-};
 
 // Загружаем вопросы из файла
 const loadQuestions = () => {
@@ -187,30 +191,14 @@ const saveQuestions = (questions) => {
   fs.writeFileSync('./data/questions.json', JSON.stringify(questions));
 };
 
-// Сохранение ответов в файл
-const saveAnswers = () => {
-  fs.writeFile(answersFilePath, JSON.stringify(answersList, null, 2), (err) => {
-    if (err) {
-      console.error("Ошибка при сохранении answers.json:", err);
-      return;
-    }
-    console.log("Ответы сохранены:", answersList);
-  });
-};
-
-// Очистка ответов перед новой игрой
-function clearAnswers() {
-  answersList.answers = answersList.answers.map(entry => ({ team: entry.team, answers: [] }));
-}
-
 loadUsers();
 loadAnswers();
 
-// API для получения команд
 app.get('/api/teams', (req, res) => {
   console.log('Teams data:', gameState.teams);
   res.status(200).json(gameState.teams);
 });
+
 
 // Логин
 app.post("/api/login", (req, res) => {
@@ -296,13 +284,14 @@ app.delete("/api/users/:username", (req, res) => {
 // Присоединение команды к игре
 app.post('/api/join-game', (req, res) => {
   const { teamName } = req.body;
-  
+
   if (!teamName) {
     return res.status(400).json({ message: 'Название команды обязательно' });
   }
 
   if (gameState.gameStarted) {
-    if (!gameState.teams.find(team => team.name === teamName)) {
+    const existingTeam = gameState.teams.find(team => team.name === teamName);
+    if (!existingTeam) {
       gameState.teams.push({ name: teamName, moves: 0, points: 0 });
       console.log(`Команда ${teamName} присоединилась к игре.`);
     }
@@ -312,7 +301,7 @@ app.post('/api/join-game', (req, res) => {
   }
 });
 
-// API для отправки ответов
+
 app.post('/api/answers', (req, res) => {
   const { team, answers } = req.body;
 
@@ -324,10 +313,29 @@ app.post('/api/answers', (req, res) => {
       return res.status(500).json({ error: "Failed to read answers file" });
     }
 
-    const existingAnswers = JSON.parse(data || "[]");
+    let existingAnswers;
+    try {
+      existingAnswers = JSON.parse(data);
+      // Проверяем, что данные являются массивом
+      if (!Array.isArray(existingAnswers)) {
+        console.warn("Expected array but found different data. Initializing empty array.");
+        existingAnswers = []; // Инициализируем пустой массив, если структура некорректна
+      }
+    } catch (parseError) {
+      console.error('Ошибка при парсинге файла answers.json:', parseError);
+      existingAnswers = []; // В случае ошибки парсинга также инициализируем пустой массив
+    }
 
-    // Добавляем новые ответы
-    existingAnswers.push({ team, answers });
+    // Проверяем, есть ли уже ответы от этой команды
+    const existingTeamIndex = existingAnswers.findIndex(item => item.team === team);
+
+    if (existingTeamIndex >= 0) {
+      // Обновляем ответы существующей команды
+      existingAnswers[existingTeamIndex].answers = answers;
+    } else {
+      // Добавляем новые ответы
+      existingAnswers.push({ team, answers });
+    }
 
     // Записываем обновленные ответы обратно в файл
     fs.writeFile(filePath, JSON.stringify(existingAnswers, null, 2), (err) => {
@@ -338,6 +346,8 @@ app.post('/api/answers', (req, res) => {
     });
   });
 });
+
+
 
 // Route to get answers data
 app.get("/api/answers", (req, res) => {
@@ -350,7 +360,6 @@ app.get("/api/answers", (req, res) => {
     res.json(answers);
   });
 });
-
 
 // API для получения списка вопросов
 app.get('/api/questions', (req, res) => {
@@ -399,44 +408,43 @@ app.get('/api/teams-progress', (req, res) => {
   });
 });
 
-
+// Эндпоинт для начала игры
 app.post('/api/start-game', (req, res) => {
-  const { duration } = req.body; // Получаем продолжительность игры из тела запроса
+  const { duration } = req.body;
 
-  // Обновляем глобальные переменные
-  gameDuration = duration || gameDuration; // Продолжительность игры
-  gameStartTime = new Date(); // Время начала игры
+  // Очищаем файл answers.json при старте игры
+  const emptyAnswers = [];
 
-  // Очищаем существующий интервал (если есть)
-  if (gameInterval) clearInterval(gameInterval);
-
-  // Устанавливаем новый интервал для обновления таймера
-  gameInterval = setInterval(() => {
-    io.emit('timer_update', calculateRemainingTime()); // Отправляем обновление таймера всем клиентам
-  }, 1000); // Каждую секунду
-
-  // Загружаем вопросы из файла
-  fs.readFile('./data/questions.json', 'utf8', (err, data) => {
+  fs.writeFile(answersFilePath, JSON.stringify(emptyAnswers, null, 2), (err) => {
     if (err) {
-      return res.status(500).json({ message: 'Ошибка при чтении файла вопросов' });
+      console.error('Ошибка очистки answers.json:', err);
+      return res.status(500).json({ message: 'Ошибка старта игры' });
     }
 
-    try {
-      gameQuestions = JSON.parse(data);
-      // Отправляем список вопросов обратно на клиент
-      res.status(200).json({ questions: gameQuestions });
-    } catch (parseErr) {
-      res.status(500).json({ message: 'Ошибка при парсинге вопросов' });
-    }
+    // Загружаем вопросы из файла
+    fs.readFile(questionsFilePath, 'utf-8', (err, data) => {
+      if (err) {
+        console.error('Ошибка загрузки questions.json:', err);
+        return res.status(500).json({ message: 'Ошибка загрузки вопросов' });
+      }
+
+      const questions = JSON.parse(data); // Преобразуем JSON в объект
+
+      // Отправляем вопросы на клиент
+      res.json({ questions });
+
+      // Оповещаем всех клиентов через socket.io о старте игры
+      io.emit('game_started', questions);
+    });
   });
 });
-
 
 // End Game
 app.post('/api/end-game', (req, res) => {
   clearInterval(gameInterval);
   gameInterval = null;
   gameStartTime = null;
+  gameState.gameStarted = false; // Обновляем состояние игры
   res.status(200).send('Game ended');
 });
 
@@ -445,11 +453,43 @@ app.post('/api/save-questions', (req, res) => {
   const { questions } = req.body;
   
   if (Array.isArray(questions)) {
-    saveQuestionsToFile(questions); // Сохраняем вопросы в файл
+    saveQuestions(questions); // Сохраняем вопросы в файл
     res.status(200).json({ message: 'Questions saved successfully.' });
   } else {
     res.status(400).json({ message: 'Invalid questions format.' });
   }
+});
+
+// Очистка массива ответов
+app.post('/api/clear-answers', (req, res) => {
+  fs.writeFile('./data/answers.json', JSON.stringify([]), (err) => {
+    if (err) {
+      console.error('Error clearing answers:', err);
+      return res.status(500).json({ message: 'Failed to clear answers' });
+    }
+    res.json({ message: 'Answers cleared successfully' });
+  });
+});
+
+// Эндпоинт для отправки ответов
+app.post('/api/send-answers', (req, res) => {
+  const { team, answers } = req.body;
+
+  // Логика для сохранения ответов в файл answers.json
+  const newAnswer = { team, answers };
+  answersData.push(newAnswer); // или обновляем ответы
+
+  fs.writeFile(answersFilePath, JSON.stringify(answersData, null, 2), (err) => {
+    if (err) {
+      console.error('Ошибка записи в answers.json:', err);
+      return res.status(500).json({ message: 'Ошибка отправки ответов' });
+    }
+
+    // Оповещаем всех подключенных клиентов (особенно админов) об обновлении ответов
+    io.emit('new_answer', newAnswer);
+
+    res.status(200).json({ message: 'Ответы отправлены' });
+  });
 });
 
 
@@ -471,36 +511,82 @@ const saveUsers = () => {
   });
 };
 
-
-const activeTeams = new Set();
+let activeTeams = new Set();
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
   socket.on("team_connected", (team) => {
+    console.log('Received team data:', team); // Проверьте, что данные приходят корректно
     if (!activeTeams.has(team.username)) {
       activeTeams.add(team.username);
       console.log(`Team connected: ${team.username}`);
+      io.emit('update_teams', Array.from(activeTeams)); // Обновите список команд для всех клиентов
     } else {
       console.log(`Team ${team.username} is already connected.`);
     }
-
-    // Обновление списка активных команд
-    io.emit('update_teams', Array.from(activeTeams));
-  });
-
-  socket.on('join_game', (team) => {
-    // В Set не используется метод push, вместо этого добавляем через .add()
-    activeTeams.add(team.username);
-    io.emit('update_teams', Array.from(activeTeams));
-  });
-
-  socket.on('disconnect', () => {
-    activeTeams = activeTeams.filter(t => t.id !== socket.id);
-    io.emit('update_teams', Array.from(activeTeams));
   });  
 
-  socket.on('game_started', () => {
+  socket.on("disconnect", () => {
+    if (activeTeams.has(socket.username)) {
+      activeTeams.delete(socket.username);
+      console.log(`Team disconnected: ${socket.username}`);
+      io.emit('update_teams', Array.from(activeTeams)); // Обновите список команд для всех клиентов
+    }
+  });
+
+  socket.on('request_questions', () => {
+    // Отправить вопросы текущей игры
+    if (gameQuestions && gameQuestions.length > 0) {
+      socket.emit('receive_questions', gameQuestions);
+    } else {
+      // Если вопросов нет, можно отправить сообщение об ошибке или пустой массив
+      socket.emit('receive_questions', []);
+    }
+  });  
+
+  socket.on('submit_answers', ({ team, answers }) => {
+    fs.readFile(answersFilePath, 'utf-8', (err, data) => {
+      if (err) {
+        console.error('Ошибка при чтении answers.json:', err);
+        return;
+      }
+  
+      let currentAnswers = [];
+  
+      try {
+        if (data) {
+          currentAnswers = JSON.parse(data);
+        }
+      } catch (parseError) {
+        console.error('Ошибка при парсинге JSON:', parseError);
+        return;
+      }
+  
+      const existingTeamIndex = currentAnswers.findIndex(item => item.team === team.username);
+  
+      if (existingTeamIndex >= 0) {
+        currentAnswers[existingTeamIndex].answers = answers;
+      } else {
+        currentAnswers.push({ team: team.username, answers });
+      }
+  
+      fs.writeFile(answersFilePath, JSON.stringify(currentAnswers, null, 2), (writeErr) => {
+        if (writeErr) {
+          console.error('Ошибка при записи в answers.json:', writeErr);
+        } else {
+          console.log('Ответы успешно сохранены');
+          // Оповещаем всех клиентов об обновленных ответах
+          io.emit('new_answer', { team: team.username, answers });
+        }
+      });
+    });
+  });  
+  
+
+  socket.on('game_started', (questions) => {
+    // Обновляем gameQuestions при старте игры
+    gameQuestions = questions;
     io.emit('game_started', questions); // Отправляем вопросы всем подключенным пользователям
   });
 
@@ -508,7 +594,6 @@ io.on('connection', (socket) => {
     io.emit('game_ended');
   });
 });
-
 
 // server.js
 const calculateRemainingTime = () => {
@@ -519,11 +604,7 @@ const calculateRemainingTime = () => {
 };
 
 // Убедитесь, что emit происходит каждую секунду, и значение корректное
-gameInterval = setInterval(() => {
-  io.emit('timer_update', calculateRemainingTime());
-}, 1000);
-
-
+// Перенесем запуск интервала внутрь функции startGame, чтобы он не запускался при старте сервера
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

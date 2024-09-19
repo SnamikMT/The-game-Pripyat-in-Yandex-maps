@@ -7,13 +7,13 @@ import TeamOptions from "./components/TeamOptions";
 import Questions from "./components/Questions";
 import Results from "./components/Results";
 import Header from "./components/Header";
-import Categories from "./components/categories";
+import Categories from "./components/Categories";
 import AddTeam from "./components/AddTeam";
 import ManageTeams from "./components/ManageTeams";
 import Maps from "./components/Maps";
 import AdminStatistics from "./components/AdminStatistics";
 import Progress from "./components/Progress";
-import Game from "./components/game";
+import Game from "./components/Game";
 import AddQuestion from "./components/AddQuestion";
 
 const socket = io("http://localhost:5000");
@@ -52,9 +52,9 @@ const App = () => {
             setGameStarted(false);
             return 0;
           }
-          return prevTime - 1; // Уменьшение на 1 секунду
+          return prevTime - 1;
         });
-      }, 1000); // Интервал в 1 секунду
+      }, 1000);
 
       return () => clearInterval(timerInterval);
     }
@@ -79,6 +79,18 @@ const App = () => {
     const interval = setInterval(fetchData, 10000); // Refresh every 10 seconds
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    socket.on("update_teams", (teams) => {
+      console.log('Received updated teams data:', teams);
+      setTeamsData(teams);
+    });
+  
+    return () => {
+      socket.off("update_teams");
+    };
+  }, []);
+  
 
   // Socket event listeners
   useEffect(() => {
@@ -127,12 +139,12 @@ const App = () => {
 
   // Handle joining the game
   const handleJoinGame = async () => {
-    const teamName = team?.username; // Используем team.username
+    const teamName = team?.username;
     if (!teamName) {
       console.error("Team name is missing.");
       return;
     }
-  
+
     try {
       const response = await axios.post('http://localhost:5000/api/join-game', { teamName });
       console.log('Join game response:', response.data);
@@ -146,7 +158,7 @@ const App = () => {
     try {
       const response = await axios.post("http://localhost:5000/api/start-game");
       setGameStarted(true);
-      setRemainingTime(response.data.duration); // Assuming the duration is returned from the API
+      setRemainingTime(response.data.duration);
       console.log("Игра началась успешно.");
     } catch (error) {
       console.error("Ошибка при старте игры:", error.response?.data || error.message);

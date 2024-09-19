@@ -25,7 +25,8 @@ const Header = ({
     const fetchQuestions = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/questions');
-        setLocalQuestions(response.data.questions || []);
+        // Ensure the response contains a valid array
+        setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
       } catch (error) {
         console.error('Error loading questions:', error);
       }
@@ -33,6 +34,14 @@ const Header = ({
 
     fetchQuestions();
   }, []);
+
+  useEffect(() => {
+    // Получение вопросов после старта игры
+    socket.on('game_started', (questions) => {
+      setQuestions(questions);
+    });
+  }, [socket]);
+  
 
   // Toggle actions visibility
   const toggleActions = () => {
@@ -49,7 +58,8 @@ const Header = ({
           maxScore: Number(maxScore),
         },
       });
-      setLocalQuestions(response.data.questions);
+      // Ensure the response contains a valid array
+      setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
       setNewQuestion('');
       setMinScore(0);
       setMaxScore(10);
@@ -62,26 +72,41 @@ const Header = ({
   const handleDeleteQuestion = async (index) => {
     try {
       const response = await axios.post('http://localhost:5000/api/delete-question', { index });
-      setLocalQuestions(response.data.questions);
+      // Ensure the response contains a valid array
+      setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
     } catch (error) {
       console.error('Error deleting question:', error);
     }
   };
 
   // Start the game
-  const handleStartGame = async () => {
-    try {
-      const response = await axios.post('http://localhost:5000/api/start-game', {
-        duration: gameDuration,
-      });
-      const serverQuestions = response.data.questions;
-      socket.emit('game_started', serverQuestions);
-      setGameStarted(true);
-      setRemainingTime(gameDuration * 60);
-    } catch (error) {
-      console.error('Error starting game:', error);
+const handleStartGame = async () => {
+  try {
+    // Очищаем файл с ответами перед началом игры
+    await axios.post('http://localhost:5000/api/clear-answers');
+
+    // Запуск игры с указанной продолжительностью
+    const response = await axios.post('http://localhost:5000/api/start-game', {
+      duration: gameDuration,
+    });
+
+    const serverQuestions = response.data.questions;
+
+    if (serverQuestions && serverQuestions.length > 0) {
+      setLocalQuestions(serverQuestions);
+      setQuestions(serverQuestions); // Убедитесь, что вопросы передаются в Game
     }
-  };
+
+    // Сообщаем через сокет, что игра началась
+    socket.emit('game_started', serverQuestions);
+
+    setGameStarted(true);
+    setRemainingTime(gameDuration * 60);
+  } catch (error) {
+    console.error('Error starting game:', error);
+  }
+};
+
 
   // End the game
   const handleEndGame = async () => {
@@ -150,12 +175,17 @@ const Header = ({
               <div>
                 <h4>Question List:</h4>
                 <ul>
-                  {localQuestions.map((q, index) => (
-                    <li key={index}>
-                      {q.text} (Score: {q.minScore} - {q.maxScore})
-                      <button onClick={() => handleDeleteQuestion(index)}>Delete</button>
-                    </li>
-                  ))}
+                  {/* Check if localQuestions is an array before mapping */}
+                  {Array.isArray(localQuestions) && localQuestions.length > 0 ? (
+                    localQuestions.map((q, index) => (
+                      <li key={index}>
+                        {q.text} (Score: {q.minScore} - {q.maxScore})
+                        <button onClick={() => handleDeleteQuestion(index)}>Delete</button>
+                      </li>
+                    ))
+                  ) : (
+                    <li>No questions available</li>
+                  )}
                 </ul>
               </div>
 

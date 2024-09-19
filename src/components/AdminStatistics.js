@@ -1,137 +1,145 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import io from 'socket.io-client';
 
-const AdminStatistics = ({ gameEnded, remainingTime, formatTime }) => {
+const socket = io('http://localhost:5000'); // подключение к Socket.IO
+
+const AdminStatistics = () => {
   const [teamsData, setTeamsData] = useState([]);
   const [answersData, setAnswersData] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [scores, setScores] = useState({}); // Состояние для хранения оценок
 
-  // Fetch teams data
-  const fetchTeamsData = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/teams");
-      console.log("Teams data:", response.data);
-      setTeamsData(response.data || []);
-    } catch (error) {
-      console.error("Ошибка при получении данных о командах:", error);
-    }
-  };
-
-  // Fetch answers data
-  const fetchAnswersData = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/answers");
-      if (response.data && Array.isArray(response.data.answers)) {
-        console.log("Answers data:", response.data.answers);
-        setAnswersData(response.data.answers);
-      } else {
-        console.error("Нет данных с ответами");
-        setAnswersData([]);
-      }
-    } catch (error) {
-      console.error("Ошибка при получении данных с ответами:", error);
-      setAnswersData([]);
-    }
-  };
-
-  // Periodic data update
   useEffect(() => {
-    fetchTeamsData();
-    fetchAnswersData();
-    const interval = setInterval(() => {
-      fetchTeamsData();
-      fetchAnswersData();
-    }, 10000);
-    return () => clearInterval(interval);
+    axios.get('http://localhost:5000/api/teams')
+      .then(response => setTeamsData(response.data || []))
+      .catch(error => console.error('Error fetching teams:', error));
+
+    axios.get('http://localhost:5000/api/answers')
+      .then(response => setAnswersData(response.data || []))
+      .catch(error => console.error('Error fetching answers:', error));
+
+    axios.get('http://localhost:5000/api/questions')
+      .then(response => {
+        if (Array.isArray(response.data)) {
+          setQuestions(response.data);
+        } else if (response.data.questions && Array.isArray(response.data.questions)) {
+          setQuestions(response.data.questions);
+        }
+      })
+      .catch(error => console.error('Error fetching questions:', error));
+
+    socket.on('new_answer', (newAnswer) => {
+      setAnswersData((prevAnswers) => [...prevAnswers, newAnswer]);
+    });
+
+    return () => {
+      socket.off('new_answer');
+    };
   }, []);
 
-  // Combine teams with their answers
-  const teamsWithAnswers = teamsData.map((team) => {
-    const teamName = team.name ? team.name.trim().toLowerCase() : "";
-    const teamAnswer = answersData.find(
-      (answer) => answer.team && answer.team.trim().toLowerCase() === teamName
-    );
-    return { ...team, answers: teamAnswer ? teamAnswer.answers : null };
-  });
+  const handleScoreChange = (team, questionIndex, event) => {
+    const { value } = event.target;
+    setScores(prevScores => ({
+      ...prevScores,
+      [`${team}-${questionIndex}`]: value
+    }));
+  };
 
-  const teamsWithoutAnswers = teamsWithAnswers.filter((team) => !team.answers);
+  const handleSaveScores = (team) => {
+    // Замените эту функцию на функцию для сохранения баллов на сервере
+    console.log(`Scores for ${team}:`, scores);
+  };
 
   return (
     <div>
-      <h2>Статистика игры</h2>
-      {gameEnded ? (
-        <p>Игра завершена</p>
-      ) : (
-        <p>
-          Игра продолжается... Осталось времени: {formatTime(remainingTime)}
-        </p>
-      )}
+      <h2>Admin Statistics</h2>
 
-      {teamsData.length === 0 ? (
-        <p>Нет доступных команд.</p>
-      ) : (
-        <div>
-          <table>
-            <thead>
-              <tr>
-                <th>Команды</th>
-                <th>Ходы</th>
-                <th>Баллы</th>
-                <th>Гонорар</th>
+      {/* Таблица с командами и статистикой */}
+      <h3>Teams Statistics</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th>Moves</th>
+            <th>Points</th>
+            <th>Reward</th>
+          </tr>
+        </thead>
+        <tbody>
+          {teamsData.length > 0 ? (
+            teamsData.map(team => (
+              <tr key={team.name}>
+                <td>{team.name}</td>
+                <td>{team.moves}</td>
+                <td>{team.points}</td>
+                <td>{team.reward}</td>
               </tr>
-            </thead>
-            <tbody>
-              {teamsWithAnswers.map((team, index) => (
-                <tr key={index}>
-                  <td>{team.name}</td>
-                  <td>{team.moves || '-'}</td>
-                  <td>{team.points || '-'}</td>
-                  <td>{team.reward || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div>
-            <h3>Ответы команд:</h3>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-              {teamsWithAnswers.map((team, index) => (
-                <div
-                  key={index}
-                  style={{
-                    border: "1px solid #ccc",
-                    borderRadius: "8px",
-                    padding: "16px",
-                    width: "300px",
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <h4>{team.name}</h4>
-                  {team.answers ? (
-                    <ul>
-                      {Object.keys(team.answers).map((questionKey, i) => (
-                        <li key={i}>{`${questionKey}: ${team.answers[questionKey]}`}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>Нет ответов</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {teamsWithoutAnswers.length > 0 && (
-            <div>
-              <h3>Игроки, которые пока что не дали ответы на вопросы:</h3>
-              <ul>
-                {teamsWithoutAnswers.map((team, index) => (
-                  <li key={index}>{team.name}</li>
-                ))}
-              </ul>
-            </div>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4">No teams available</td>
+            </tr>
           )}
-        </div>
-      )}
+        </tbody>
+      </table>
+
+      {/* Секция с командами, которые участвуют в игре */}
+      <h3>Participating Teams</h3>
+      <div className="team-cards-container">
+        {teamsData.length > 0 ? (
+          teamsData.map(team => (
+            <div key={team.name} className="team-card">
+              <h3>{team.name}</h3>
+              <p>Moves: {team.moves}</p>
+              <p>Points: {team.points}</p>
+              <p>Reward: {team.reward}</p>
+            </div>
+          ))
+        ) : (
+          <p>No teams currently participating</p>
+        )}
+      </div>
+
+      {/* Секция с ответами команд */}
+      <h3>Teams' Answers</h3>
+      <div className="answers-container">
+        {answersData.length > 0 ? (
+          answersData.map(answer => (
+            <div key={answer.team} className="answer-card">
+              <h4>{answer.team}</h4>
+              <ul>
+                {Object.entries(answer.answers).map(([index, ans]) => {
+                  const question = questions[index];
+                  const questionText = question ? question.text : `Question ${index}`;
+                  const minScore = question ? question.minScore : 0;
+                  const maxScore = question ? question.maxScore : 10;
+
+                  return (
+                    <li key={index}>
+                      <strong>{questionText}:</strong> {ans} (Score range: {minScore} - {maxScore})
+                      <div className="score-input">
+                        <label htmlFor={`score-${answer.team}-${index}`}>Score:</label>
+                        <input
+                          type="number"
+                          id={`score-${answer.team}-${index}`}
+                          min={minScore}
+                          max={maxScore}
+                          value={scores[`${answer.team}-${index}`] || ''}
+                          onChange={(e) => handleScoreChange(answer.team, index, e)}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <button onClick={() => handleSaveScores(answer.team)}>Save Scores</button>
+            </div>
+          ))
+        ) : (
+          <p>No answers available</p>
+        )}
+      </div>
     </div>
   );
 };

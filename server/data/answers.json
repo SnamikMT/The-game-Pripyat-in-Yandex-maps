@@ -1,3 +1,10 @@
-{
-  "answers": []
-}
+[
+  {
+    "team": "admin",
+    "answers": {
+      "0": "gfdsg",
+      "1": "gfds",
+      "2": "gfds"
+    }
+  }
+]

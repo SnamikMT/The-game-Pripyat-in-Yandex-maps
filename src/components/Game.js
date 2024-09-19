@@ -1,4 +1,3 @@
-// src/components/Game.js
 import React, { useEffect, useState } from 'react';
 
 // Функция для форматирования времени
@@ -11,9 +10,12 @@ const formatTime = (timeInSeconds) => {
 const Game = ({ team, gameStarted, remainingTime, socket }) => {
   const [joined, setJoined] = useState(false);
   const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
   const [activeTeams, setActiveTeams] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(remainingTime);
 
   useEffect(() => {
+    // Присоединение команды к игре
     if (!joined && team) {
       socket.emit('join_game', team); // Уведомить сервер о присоединении команды
       setJoined(true);
@@ -31,7 +33,16 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
 
     // Обновление таймера
     socket.on('timer_update', (newTime) => {
-      console.log('Обновление таймера:', newTime);
+      setTimeLeft(newTime);
+    });
+
+    // Получение вопросов при монтировании компонента, если игра уже началась
+    if (gameStarted) {
+      socket.emit('request_questions'); // Запрос на получение вопросов
+    }
+
+    socket.on('receive_questions', (questions) => {
+      setQuestions(questions);
     });
 
     // Очистка слушателей событий при размонтировании компонента
@@ -39,8 +50,21 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
       socket.off('update_teams');
       socket.off('game_started');
       socket.off('timer_update');
+      socket.off('receive_questions');
     };
-  }, [joined, team, socket]);
+  }, [joined, team, gameStarted, socket]);
+
+  const handleAnswerChange = (index, value) => {
+    setAnswers((prevAnswers) => ({
+      ...prevAnswers,
+      [index]: value,
+    }));
+  };
+
+  const handleSubmit = () => {
+    socket.emit('submit_answers', { team, answers });
+    console.log('Ответы отправлены:', answers);
+  };
 
   // Если игра не началась
   if (!gameStarted) {
@@ -55,31 +79,40 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
       <div className="active-teams">
         <h2>Активные команды:</h2>
         <ul>
-          {questions.map((question, index) => (
-            <li key={index}>{question.text}</li> // Add the "key" prop here
+          {activeTeams.map((team, index) => (
+            <li key={index}>{team}</li>
           ))}
         </ul>
-
       </div>
 
       {/* Таймер */}
       <div className="timer">
-        Оставшееся время: {remainingTime !== null ? formatTime(remainingTime) : 'Время не установлено'}
+        Оставшееся время: {timeLeft !== null ? formatTime(timeLeft) : 'Время не установлено'}
       </div>
 
-      {/* Отображение вопросов */}
+      {/* Отображение вопросов с полями для ввода ответов */}
       <div className="questions-container">
         {questions.length ? (
           questions.map((question, index) => (
-            <div key={question.id || index} className="question-card"> {/* Уникальный ключ */}
+            <div key={index} className="question-card">
               <p>{question.text}</p>
-              {/* Элементы для ввода ответов */}
+              <p>Максимальные баллы: {question.maxScore}</p>
+              {/* Поле для ввода ответа */}
+              <input
+                type="text"
+                value={answers[index] || ''}
+                onChange={(e) => handleAnswerChange(index, e.target.value)}
+                placeholder="Ваш ответ"
+              />
             </div>
           ))
         ) : (
           <div>Ожидание вопросов...</div>
         )}
       </div>
+
+      {/* Кнопка для отправки ответов */}
+      <button onClick={handleSubmit}>Отправить ответы</button>
     </div>
   );
 };
