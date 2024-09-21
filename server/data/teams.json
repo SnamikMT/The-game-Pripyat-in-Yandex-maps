@@ -1,20 +1,17 @@
 [
   {
-    "name": "Team 1",
-    "moves": 5,
-    "points": 10,
-    "reward": 100
+    "username": "admin",
+    "role": "admin",
+    "isPrepared": false,
+    "inGame": false,
+    "answers": [],
+    "points": 8
   },
   {
-    "name": "Team 2",
-    "moves": 3,
-    "points": 8,
-    "reward": 80
-  },
-  {
-    "name": "Team 3",
-    "moves": 4,
-    "points": 9,
-    "reward": 90
+    "username": "rob",
+    "role": "user",
+    "isPrepared": false,
+    "inGame": false,
+    "answers": []
   }
 ]

@@ -81,15 +81,26 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    axios.get('http://localhost:5000/api/teams')
+      .then(response => {
+        console.log('Teams data:', response.data); // Лог ответа с сервера
+        setTeamsData(response.data || []);
+      })
+      .catch(error => console.error('Error fetching teams:', error));
+  }, []);
+  
+
+  useEffect(() => {
     socket.on("update_teams", (teams) => {
       console.log('Received updated teams data:', teams);
-      setTeamsData(teams);
+      setTeamsData(teams); // Обновление данных команд на клиенте
     });
   
     return () => {
       socket.off("update_teams");
     };
   }, []);
+  
   
 
   // Socket event listeners
@@ -104,9 +115,14 @@ const App = () => {
 
     if (team?.username) {
       socket.on("team_joined", (teamName) => {
-        if (teamName === team.username) {
-          console.log(`${teamName} присоединилась к игре`);
+        if (team?.username) {
+          socket.on("team_joined", (teamName) => {
+            if (teamName === team.username) {
+              console.log(`${teamName} присоединилась к игре`);
+            }
+          });
         }
+        
       });
     }
 
@@ -144,7 +160,7 @@ const App = () => {
       console.error("Team name is missing.");
       return;
     }
-
+  
     try {
       const response = await axios.post('http://localhost:5000/api/join-game', { teamName });
       console.log('Join game response:', response.data);
@@ -152,6 +168,7 @@ const App = () => {
       console.error('Error joining game:', error.response?.data || error.message);
     }
   };
+  
 
   // Handle starting the game
   const handleStartGame = async () => {
@@ -226,7 +243,8 @@ const App = () => {
           />
           <div className="App">
             <Routes>
-              <Route path="/categories" element={<Categories />} />
+            // Измените строку в App.js
+              <Route path="/categories" element={<Categories team={team} />} />
               <Route path="/options" element={<TeamOptions />} />
               <Route
                 path="/questions"

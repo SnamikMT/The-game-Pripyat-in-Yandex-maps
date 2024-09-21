@@ -15,7 +15,7 @@ const Header = ({
 }) => {
   const [showActions, setShowActions] = useState(false);
   const [gameDuration, setGameDuration] = useState(60);
-  const [localQuestions, setLocalQuestions] = useState([]); // Renamed to avoid confusion
+  const [localQuestions, setLocalQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState('');
   const [minScore, setMinScore] = useState(0);
   const [maxScore, setMaxScore] = useState(10);
@@ -25,7 +25,6 @@ const Header = ({
     const fetchQuestions = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/questions');
-        // Ensure the response contains a valid array
         setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
       } catch (error) {
         console.error('Error loading questions:', error);
@@ -41,7 +40,6 @@ const Header = ({
       setQuestions(questions);
     });
   }, [socket]);
-  
 
   // Toggle actions visibility
   const toggleActions = () => {
@@ -58,7 +56,6 @@ const Header = ({
           maxScore: Number(maxScore),
         },
       });
-      // Ensure the response contains a valid array
       setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
       setNewQuestion('');
       setMinScore(0);
@@ -72,7 +69,6 @@ const Header = ({
   const handleDeleteQuestion = async (index) => {
     try {
       const response = await axios.post('http://localhost:5000/api/delete-question', { index });
-      // Ensure the response contains a valid array
       setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
     } catch (error) {
       console.error('Error deleting question:', error);
@@ -80,33 +76,27 @@ const Header = ({
   };
 
   // Start the game
-const handleStartGame = async () => {
-  try {
-    // Очищаем файл с ответами перед началом игры
-    await axios.post('http://localhost:5000/api/clear-answers');
+  const handleStartGame = async () => {
+    try {
+      await axios.post('http://localhost:5000/api/clear-answers');
+      const response = await axios.post('http://localhost:5000/api/start-game', {
+        duration: gameDuration,
+      });
 
-    // Запуск игры с указанной продолжительностью
-    const response = await axios.post('http://localhost:5000/api/start-game', {
-      duration: gameDuration,
-    });
+      const serverQuestions = response.data.questions;
 
-    const serverQuestions = response.data.questions;
+      if (serverQuestions && serverQuestions.length > 0) {
+        setLocalQuestions(serverQuestions);
+        setQuestions(serverQuestions);
+      }
 
-    if (serverQuestions && serverQuestions.length > 0) {
-      setLocalQuestions(serverQuestions);
-      setQuestions(serverQuestions); // Убедитесь, что вопросы передаются в Game
+      socket.emit('game_started', serverQuestions);
+      setGameStarted(true);
+      setRemainingTime(gameDuration * 60);
+    } catch (error) {
+      console.error('Error starting game:', error);
     }
-
-    // Сообщаем через сокет, что игра началась
-    socket.emit('game_started', serverQuestions);
-
-    setGameStarted(true);
-    setRemainingTime(gameDuration * 60);
-  } catch (error) {
-    console.error('Error starting game:', error);
-  }
-};
-
+  };
 
   // End the game
   const handleEndGame = async () => {
@@ -175,7 +165,6 @@ const handleStartGame = async () => {
               <div>
                 <h4>Question List:</h4>
                 <ul>
-                  {/* Check if localQuestions is an array before mapping */}
                   {Array.isArray(localQuestions) && localQuestions.length > 0 ? (
                     localQuestions.map((q, index) => (
                       <li key={index}>

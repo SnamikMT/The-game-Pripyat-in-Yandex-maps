@@ -2,33 +2,44 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:5000'); // подключение к Socket.IO
+const socket = io('http://localhost:5000'); // Убедитесь, что это правильный адрес вашего сервера
 
 const AdminStatistics = () => {
   const [teamsData, setTeamsData] = useState([]);
   const [answersData, setAnswersData] = useState([]);
   const [questions, setQuestions] = useState([]);
-  const [scores, setScores] = useState({}); // Состояние для хранения оценок
+  const [scores, setScores] = useState({}); 
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/teams')
-      .then(response => setTeamsData(response.data || []))
-      .catch(error => console.error('Error fetching teams:', error));
-
-    axios.get('http://localhost:5000/api/answers')
-      .then(response => setAnswersData(response.data || []))
-      .catch(error => console.error('Error fetching answers:', error));
-
-    axios.get('http://localhost:5000/api/questions')
-      .then(response => {
-        if (Array.isArray(response.data)) {
-          setQuestions(response.data);
-        } else if (response.data.questions && Array.isArray(response.data.questions)) {
-          setQuestions(response.data.questions);
+    const fetchData = async () => {
+      try {
+        // Загрузка команд
+        const teamsResponse = await axios.get('http://localhost:5000/api/teams');
+        console.log('Teams API Response:', teamsResponse.data);
+        if (teamsResponse.data && Array.isArray(teamsResponse.data)) {
+          setTeamsData(teamsResponse.data);
         }
-      })
-      .catch(error => console.error('Error fetching questions:', error));
 
+        // Загрузка ответов
+        const answersResponse = await axios.get('http://localhost:5000/api/answers');
+        setAnswersData(answersResponse.data || []);
+
+        // Загрузка вопросов
+        const questionsResponse = await axios.get('http://localhost:5000/api/questions');
+        if (Array.isArray(questionsResponse.data)) {
+          setQuestions(questionsResponse.data);
+        } else if (questionsResponse.data.questions && Array.isArray(questionsResponse.data.questions)) {
+          setQuestions(questionsResponse.data.questions);
+        }
+
+      } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+      }
+    };
+
+    fetchData();
+
+    // Обработка новых ответов от сокетов
     socket.on('new_answer', (newAnswer) => {
       setAnswersData((prevAnswers) => [...prevAnswers, newAnswer]);
     });
@@ -38,95 +49,102 @@ const AdminStatistics = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleNewTeam = (newTeam) => {
+      setTeamsData(prevTeams => [...prevTeams, newTeam]);
+    };
+
+    socket.on('team_joined', handleNewTeam);
+
+    return () => {
+      socket.off('team_joined', handleNewTeam);
+    };
+  }, []);
+
   const handleScoreChange = (team, questionIndex, event) => {
     const { value } = event.target;
     setScores(prevScores => ({
       ...prevScores,
-      [`${team}-${questionIndex}`]: value
+      [`${team}-${questionIndex}`]: Number(value)
     }));
   };
 
   const handleSaveScores = (team) => {
-    // Замените эту функцию на функцию для сохранения баллов на сервере
-    console.log(`Scores for ${team}:`, scores);
-  };
+    const teamScores = Object.keys(scores)
+      .filter(key => key.startsWith(team))
+      .map(key => {
+        const [_, questionIndex] = key.split('-');
+        return { questionIndex: Number(questionIndex), score: scores[key] };
+      });
+
+    console.log('Отправка очков для команды:', team, 'Очки:', teamScores);
+
+    axios.post('http://localhost:5000/api/teams/admin/scores', {
+      team,
+      scores: teamScores
+    })
+    .then(response => {
+      console.log('Scores saved successfully:', response.data);
+      if (response.data.teams) {
+        setTeamsData(response.data.teams);
+      }
+    })    
+    .catch(error => {
+      console.error('Error saving scores:', error.response?.data || error.message);
+    });
+  };  
 
   return (
     <div>
       <h2>Admin Statistics</h2>
 
-      {/* Таблица с командами и статистикой */}
       <h3>Teams Statistics</h3>
       <table>
         <thead>
           <tr>
-            <th>Team</th>
-            <th>Moves</th>
-            <th>Points</th>
-            <th>Reward</th>
+            <th>Команда</th>
+            <th>Ходы</th>
+            <th>Очки</th>
+            <th>Награда</th>
           </tr>
         </thead>
         <tbody>
-          {teamsData.length > 0 ? (
-            teamsData.map(team => (
-              <tr key={team.name}>
-                <td>{team.name}</td>
-                <td>{team.moves}</td>
-                <td>{team.points}</td>
-                <td>{team.reward}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="4">No teams available</td>
+          {teamsData.map((team) => (
+            <tr key={team.username}>
+              <td>{team.username}</td>
+              <td>{team.moves}</td>
+              <td>{team.points}</td>
+              <td>{team.reward}</td>
             </tr>
-          )}
+          ))}
         </tbody>
       </table>
 
-      {/* Секция с командами, которые участвуют в игре */}
-      <h3>Participating Teams</h3>
-      <div className="team-cards-container">
-        {teamsData.length > 0 ? (
-          teamsData.map(team => (
-            <div key={team.name} className="team-card">
-              <h3>{team.name}</h3>
-              <p>Moves: {team.moves}</p>
-              <p>Points: {team.points}</p>
-              <p>Reward: {team.reward}</p>
-            </div>
-          ))
-        ) : (
-          <p>No teams currently participating</p>
-        )}
-      </div>
-
-      {/* Секция с ответами команд */}
       <h3>Teams' Answers</h3>
       <div className="answers-container">
         {answersData.length > 0 ? (
-          answersData.map(answer => (
-            <div key={answer.team} className="answer-card">
+          answersData.map((answer, index) => (
+            <div key={`answer-${index}`} className="answer-card">
               <h4>{answer.team}</h4>
               <ul>
-                {Object.entries(answer.answers).map(([index, ans]) => {
-                  const question = questions[index];
-                  const questionText = question ? question.text : `Question ${index}`;
+                {Object.entries(answer.answers).map(([qIndex, ans]) => {
+                  const question = questions[qIndex];
+                  const questionText = question ? question.text : `Question ${qIndex}`;
                   const minScore = question ? question.minScore : 0;
                   const maxScore = question ? question.maxScore : 10;
 
                   return (
-                    <li key={index}>
+                    <li key={`question-${answer.team}-${qIndex}`}>
                       <strong>{questionText}:</strong> {ans} (Score range: {minScore} - {maxScore})
                       <div className="score-input">
-                        <label htmlFor={`score-${answer.team}-${index}`}>Score:</label>
+                        <label htmlFor={`score-${answer.team}-${qIndex}`}>Score:</label>
                         <input
                           type="number"
-                          id={`score-${answer.team}-${index}`}
+                          id={`score-${answer.team}-${qIndex}`}
                           min={minScore}
                           max={maxScore}
-                          value={scores[`${answer.team}-${index}`] || ''}
-                          onChange={(e) => handleScoreChange(answer.team, index, e)}
+                          value={scores[`${answer.team}-${qIndex}`] || ''}
+                          onChange={(e) => handleScoreChange(answer.team, qIndex, e)}
                         />
                       </div>
                     </li>

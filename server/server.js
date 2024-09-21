@@ -27,18 +27,41 @@ app.use(
 
 // Пути к файлам
 const usersFilePath = "./data/users.json";
-const teamsFilePath = "./data/teams.json";
-
-
 
 const questionsFilePath = path.join(__dirname, './data/questions.json');
 const answersFilePath = path.join(__dirname, './data/answers.json');
+
+
+const teamsFilePath = path.join(__dirname, 'data', 'teams.json');
+
+const blocksDataFilePath = path.join(__dirname, './data/blocksData.json');
+
+// Функция для чтения данных из teams.json
+const readTeamsFile = async () => {
+  try {
+    const data = await fs.promises.readFile(teamsFilePath, 'utf-8');
+    return JSON.parse(data) || [];
+  } catch (error) {
+    console.error('Error reading teams file:', error);
+    return [];
+  }
+};
+
+const writeTeamsFile = async (teams) => {
+  try {
+    await fs.promises.writeFile(teamsFilePath, JSON.stringify(teams, null, 2));
+    console.log('teams.json успешно обновлён');
+  } catch (error) {
+    console.error('Error writing to teams.json:', error);
+  }
+};
+
 
 // Функция для загрузки и обработки данных ответов
 function loadAnswers() {
   return new Promise((resolve, reject) => {
       // Чтение файла с ответами
-      fs.readFile(answersFilePath, 'utf-8', (err, data) => {
+      fs.readFile(answersFilePath, 'utf8', (err, data) => {
           if (err) {
               // Если файла нет, возвращаем пустой массив
               if (err.code === 'ENOENT') {
@@ -69,17 +92,6 @@ function loadAnswers() {
       });
   });
 }
-
-// Функция для записи данных в файл answers.json
-const saveAnswersToFile = (data) => {
-  fs.writeFile(answersFilePath, JSON.stringify(data, null, 2), (err) => {
-    if (err) {
-      console.error('Ошибка при сохранении ответов:', err);
-    } else {
-      console.log('Ответы успешно сохранены в answers.json');
-    }
-  });
-};
 
 let gameQuestions = [];
 let gameDuration = 60; // Default duration in minutes
@@ -194,9 +206,80 @@ const saveQuestions = (questions) => {
 loadUsers();
 loadAnswers();
 
-app.get('/api/teams', (req, res) => {
-  console.log('Teams data:', gameState.teams);
-  res.status(200).json(gameState.teams);
+const getTeams = async () => {
+  try {
+    const teams = await readTeamsFile();
+    return teams;
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    return [];
+  }
+};
+
+// Пример логики в статистике
+app.get('/api/teams', async (req, res) => {
+  const teams = await readTeamsFile(); // Используйте await для асинхронного чтения
+  console.log('Serving teams:', teams); // Убедитесь, что команды выводятся
+  res.json(teams);
+});
+
+
+// Эндпоинт для получения данных блоков
+app.get('/api/blocks', (req, res) => {
+  fs.readFile(blocksDataFilePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Ошибка при чтении файла blocksData.json:', err);
+      return res.status(500).json({ message: 'Ошибка сервера' });
+    }
+    try {
+      const blocksData = JSON.parse(data);
+      res.json(blocksData);
+    } catch (parseErr) {
+      console.error('Ошибка при парсинге файла blocksData.json:', parseErr);
+      res.status(500).json({ message: 'Ошибка сервера' });
+    }
+  });
+});
+
+// Эндпоинт для обновления блока
+app.put('/api/blocks/:category/:number', (req, res) => {
+  const { category, number } = req.params;
+  const { title, description } = req.body;
+
+  fs.readFile(blocksDataFilePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Ошибка при чтении файла blocksData.json:', err);
+      return res.status(500).json({ message: 'Ошибка сервера' });
+    }
+    try {
+      let blocksData = JSON.parse(data);
+      const categoryData = blocksData.find(cat => cat.category === category);
+      if (categoryData) {
+        const block = categoryData.blocks.find(b => b.number === parseInt(number));
+        if (block) {
+          // Обновляем данные блока
+          block.title = title || block.title;
+          block.description = description || block.description;
+
+          // Сохраняем обновленные данные
+          fs.writeFile(blocksDataFilePath, JSON.stringify(blocksData, null, 2), (writeErr) => {
+            if (writeErr) {
+              console.error('Ошибка при записи в файл blocksData.json:', writeErr);
+              return res.status(500).json({ message: 'Ошибка сервера' });
+            }
+            res.json({ message: 'Блок успешно обновлен' });
+          });
+        } else {
+          res.status(404).json({ message: 'Блок не найден' });
+        }
+      } else {
+        res.status(404).json({ message: 'Категория не найдена' });
+      }
+    } catch (parseErr) {
+      console.error('Ошибка при парсинге файла blocksData.json:', parseErr);
+      res.status(500).json({ message: 'Ошибка сервера' });
+    }
+  });
 });
 
 
@@ -208,13 +291,71 @@ app.post("/api/login", (req, res) => {
   const user = users.find((u) => u.username === username && u.password === password);
 
   if (user) {
-    console.log("Пользователь найден:", user);
-    res.status(200).json({ username: user.username, role: user.role });
+    fs.readFile(teamsFilePath, 'utf-8', (err, data) => {
+      if (err) {
+        console.error('Ошибка чтения teams.json:', err);
+        return res.status(500).json({ message: 'Ошибка сервера' });
+      }
+
+      let teams = JSON.parse(data);
+      const existingTeam = teams.find((team) => team.username === user.username);
+
+      if (!existingTeam) {
+        teams.push({
+          username: user.username,
+          role: user.role,
+          isPrepared: false, // Новая команда не готова к игре
+          inGame: false,
+          answers: []
+        });
+
+        fs.writeFile(teamsFilePath, JSON.stringify(teams, null, 2), (err) => {
+          if (err) {
+            console.error('Ошибка записи в teams.json:', err);
+            return res.status(500).json({ message: 'Ошибка сервера' });
+          }
+        });
+      }
+
+      res.status(200).json({ username: user.username, role: user.role });
+    });
   } else {
-    console.log("Неверные имя пользователя или пароль");
     res.status(401).json({ message: "Неверные имя пользователя или пароль" });
   }
 });
+
+// Подготовка команды к игре
+app.post('/api/prepare-team', (req, res) => {
+  const { username } = req.body;
+
+  fs.readFile(teamsFilePath, 'utf-8', (err, data) => {
+    if (err) {
+      console.error('Ошибка чтения teams.json:', err);
+      return res.status(500).json({ message: 'Ошибка сервера' });
+    }
+
+    let teams = JSON.parse(data);
+    const team = teams.find((team) => team.username === username);
+
+    if (team) {
+      team.isPrepared = true;
+
+      fs.writeFile(teamsFilePath, JSON.stringify(teams, null, 2), (err) => {
+        if (err) {
+          console.error('Ошибка записи в teams.json:', err);
+          return res.status(500).json({ message: 'Ошибка сервера' });
+        }
+
+        res.status(200).json({ message: 'Команда готова к игре' });
+      });
+    } else {
+      res.status(404).json({ message: 'Команда не найдена' });
+    }
+  });
+});
+
+
+
 
 // Получить всех пользователей
 app.get("/api/users", (req, res) => {
@@ -408,45 +549,68 @@ app.get('/api/teams-progress', (req, res) => {
   });
 });
 
+
 // Эндпоинт для начала игры
 app.post('/api/start-game', (req, res) => {
   const { duration } = req.body;
 
-  // Очищаем файл answers.json при старте игры
-  const emptyAnswers = [];
-
-  fs.writeFile(answersFilePath, JSON.stringify(emptyAnswers, null, 2), (err) => {
+  fs.readFile(teamsFilePath, 'utf-8', (err, data) => {
     if (err) {
-      console.error('Ошибка очистки answers.json:', err);
-      return res.status(500).json({ message: 'Ошибка старта игры' });
+      console.error('Ошибка чтения teams.json:', err);
+      return res.status(500).json({ message: 'Ошибка сервера' });
     }
 
-    // Загружаем вопросы из файла
-    fs.readFile(questionsFilePath, 'utf-8', (err, data) => {
+    let teams = JSON.parse(data);
+
+    // Обновляем статус команд: только готовые команды могут войти в игру
+    teams = teams.map(team => {
+      if (team.isPrepared) {
+        team.inGame = true;
+        team.isPrepared = false; // Сброс флага готовности
+      }
+      return team;
+    });
+
+    fs.writeFile(teamsFilePath, JSON.stringify(teams, null, 2), (err) => {
       if (err) {
-        console.error('Ошибка загрузки questions.json:', err);
-        return res.status(500).json({ message: 'Ошибка загрузки вопросов' });
+        console.error('Ошибка записи teams.json:', err);
+        return res.status(500).json({ message: 'Ошибка старта игры' });
       }
 
-      const questions = JSON.parse(data); // Преобразуем JSON в объект
-
-      // Отправляем вопросы на клиент
-      res.json({ questions });
-
-      // Оповещаем всех клиентов через socket.io о старте игры
-      io.emit('game_started', questions);
+      res.status(200).json({ message: 'Игра началась' });
     });
   });
 });
 
-// End Game
+
+// Эндпоинт для окончания игры
 app.post('/api/end-game', (req, res) => {
-  clearInterval(gameInterval);
-  gameInterval = null;
-  gameStartTime = null;
-  gameState.gameStarted = false; // Обновляем состояние игры
-  res.status(200).send('Game ended');
+  fs.readFile(teamsFilePath, 'utf-8', (err, data) => {
+    if (err) {
+      console.error('Ошибка чтения teams.json:', err);
+      return res.status(500).json({ message: 'Ошибка сервера' });
+    }
+
+    let teams = JSON.parse(data);
+
+    // Сброс статуса всех команд
+    teams = teams.map(team => {
+      team.inGame = false;
+      team.isPrepared = false;
+      return team;
+    });
+
+    fs.writeFile(teamsFilePath, JSON.stringify(teams, null, 2), (err) => {
+      if (err) {
+        console.error('Ошибка записи teams.json:', err);
+        return res.status(500).json({ message: 'Ошибка завершения игры' });
+      }
+
+      res.status(200).json({ message: 'Игра завершена' });
+    });
+  });
 });
+
 
 // Обработка сохранения вопросов
 app.post('/api/save-questions', (req, res) => {
@@ -500,6 +664,38 @@ app.post('/api/record-score', (req, res) => {
   res.status(200).send('Score recorded');
 });
 
+app.post('/api/teams/admin/scores', (req, res) => {
+  const { team, scores } = req.body;
+
+  // Логи
+  console.log('Received request to update scores:', { team, scores });
+
+  if (!team || !Array.isArray(scores)) {
+    return res.status(400).json({ message: 'Invalid request' });
+  }
+
+  let teams = readTeamsFile();
+  console.log('Current teams data:', teams);
+
+  const teamIndex = teams.findIndex(t => t.username === team);
+  if (teamIndex === -1) {
+    return res.status(404).json({ message: 'Team not found' });
+  }
+
+  // Обновляем баллы команды
+  const totalScore = scores.reduce((acc, item) => acc + item.score, 0);
+  teams[teamIndex].points = (teams[teamIndex].points || 0) + totalScore;
+
+  // Логируем обновленную команду
+  console.log('Updated team data:', teams[teamIndex]);
+
+  // Сохраняем обновленные данные
+  writeTeamsFile(teams);
+
+  res.json({ message: 'Scores updated successfully', teams });
+});
+
+
 // Функция для сохранения пользователей в файл
 const saveUsers = () => {
   fs.writeFile(usersFilePath, JSON.stringify({ users }, null, 2), (err) => {
@@ -512,20 +708,44 @@ const saveUsers = () => {
 };
 
 let activeTeams = new Set();
+const teams = [];
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  socket.on("team_connected", (team) => {
-    console.log('Received team data:', team); // Проверьте, что данные приходят корректно
-    if (!activeTeams.has(team.username)) {
-      activeTeams.add(team.username);
-      console.log(`Team connected: ${team.username}`);
-      io.emit('update_teams', Array.from(activeTeams)); // Обновите список команд для всех клиентов
-    } else {
-      console.log(`Team ${team.username} is already connected.`);
+  socket.on('join_game', (team) => {
+    console.log(`${team.username} присоединился к игре`);
+    activeTeams.add(team.username);
+    io.emit('update_teams', Array.from(activeTeams));
+  });
+  
+
+  // Обработчик подключения команды
+  socket.on('team_connected', async (team) => {
+    console.log(`Команда ${team.username} подключилась`);
+  
+    // Read current teams from file
+    let currentTeams = await readTeamsFile();
+  
+    // Check for existing team
+    const existingTeam = currentTeams.find(t => t.username === team.username);
+    if (!existingTeam) {
+      // Add new team
+      currentTeams.push(team);
+      await writeTeamsFile(currentTeams); // Save updated data
+  
+      // Emit updated teams to all connected clients
+      io.emit('update_teams', currentTeams);
     }
   });  
+  
+
+// Usage in your socket event
+socket.on('someEvent', async (team) => {
+  const teams = await getTeams();
+  const existingTeam = teams.find(t => t.username === team.username);
+  // Your logic here...
+});
 
   socket.on("disconnect", () => {
     if (activeTeams.has(socket.username)) {
@@ -545,23 +765,10 @@ io.on('connection', (socket) => {
     }
   });  
 
-  socket.on('submit_answers', ({ team, answers }) => {
-    fs.readFile(answersFilePath, 'utf-8', (err, data) => {
-      if (err) {
-        console.error('Ошибка при чтении answers.json:', err);
-        return;
-      }
-  
-      let currentAnswers = [];
-  
-      try {
-        if (data) {
-          currentAnswers = JSON.parse(data);
-        }
-      } catch (parseError) {
-        console.error('Ошибка при парсинге JSON:', parseError);
-        return;
-      }
+  socket.on('submit_answers', async ({ team, answers }) => {
+    try {
+      let currentAnswers = await fs.promises.readFile(answersFilePath, 'utf-8');
+      currentAnswers = currentAnswers ? JSON.parse(currentAnswers) : [];
   
       const existingTeamIndex = currentAnswers.findIndex(item => item.team === team.username);
   
@@ -571,24 +778,23 @@ io.on('connection', (socket) => {
         currentAnswers.push({ team: team.username, answers });
       }
   
-      fs.writeFile(answersFilePath, JSON.stringify(currentAnswers, null, 2), (writeErr) => {
-        if (writeErr) {
-          console.error('Ошибка при записи в answers.json:', writeErr);
-        } else {
-          console.log('Ответы успешно сохранены');
-          // Оповещаем всех клиентов об обновленных ответах
-          io.emit('new_answer', { team: team.username, answers });
-        }
-      });
-    });
-  });  
+      await fs.promises.writeFile(answersFilePath, JSON.stringify(currentAnswers, null, 2));
+      console.log('Ответы успешно сохранены');
+      
+      // Notify all clients of updated answers
+      io.emit('new_answer', { team: team.username, answers });
+    } catch (err) {
+      console.error('Ошибка при обработке ответов:', err);
+    }
+  });
+  
   
 
-  socket.on('game_started', (questions) => {
-    // Обновляем gameQuestions при старте игры
-    gameQuestions = questions;
-    io.emit('game_started', questions); // Отправляем вопросы всем подключенным пользователям
+  socket.on('start_game', () => {
+    const questions = getQuestions(); // Получите ваши вопросы из базы данных или файла
+    socket.emit('game_started', { questions });
   });
+  
 
   socket.on('game_ended', () => {
     io.emit('game_ended');

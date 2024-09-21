@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios'; // Добавьте импорт axios
 
 // Функция для форматирования времени
 const formatTime = (timeInSeconds) => {
@@ -8,17 +9,30 @@ const formatTime = (timeInSeconds) => {
 };
 
 const Game = ({ team, gameStarted, remainingTime, socket }) => {
-  const [joined, setJoined] = useState(false);
+  const [joined, setJoined] = useState(false); // Отслеживаем, подключена ли команда
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [activeTeams, setActiveTeams] = useState([]);
   const [timeLeft, setTimeLeft] = useState(remainingTime);
 
   useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/questions');
+        const loadedQuestions = response.data.questions || []; // Извлекаем массив вопросов
+        console.log('Загруженные вопросы:', loadedQuestions);
+        setQuestions(loadedQuestions); // Устанавливаем массив вопросов
+      } catch (error) {
+        console.error('Ошибка загрузки вопросов:', error);
+      }
+    };    
+
+    loadQuestions();
+
     // Присоединение команды к игре
-    if (!joined && team) {
+    if (team && !joined) {
       socket.emit('join_game', team); // Уведомить сервер о присоединении команды
-      setJoined(true);
+      setJoined(true); // Обновление состояния, что команда подключена
     }
 
     // Обновление списка активных команд
@@ -26,33 +40,17 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
       setActiveTeams(teams);
     });
 
-    // Получение вопросов после старта игры
-    socket.on('game_started', (questions) => {
-      setQuestions(questions);
-    });
-
     // Обновление таймера
     socket.on('timer_update', (newTime) => {
       setTimeLeft(newTime);
     });
 
-    // Получение вопросов при монтировании компонента, если игра уже началась
-    if (gameStarted) {
-      socket.emit('request_questions'); // Запрос на получение вопросов
-    }
-
-    socket.on('receive_questions', (questions) => {
-      setQuestions(questions);
-    });
-
     // Очистка слушателей событий при размонтировании компонента
     return () => {
       socket.off('update_teams');
-      socket.off('game_started');
       socket.off('timer_update');
-      socket.off('receive_questions');
     };
-  }, [joined, team, gameStarted, socket]);
+  }, [joined, team, socket]);
 
   const handleAnswerChange = (index, value) => {
     setAnswers((prevAnswers) => ({
@@ -66,6 +64,24 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
     console.log('Ответы отправлены:', answers);
   };
 
+  // Обработка подключения команды
+  const handleJoinGame = () => {
+    if (team && !joined) {
+      socket.emit('join_game', team);
+      setJoined(true); // Обновление состояния, что команда подключена
+    }
+  };
+
+  // Если команда еще не подключена
+  if (!joined) {
+    return (
+      <div className="game-container">
+        <h1>Присоединиться к игре</h1>
+        <button onClick={handleJoinGame}>Подключиться к игре</button>
+      </div>
+    );
+  }
+
   // Если игра не началась
   if (!gameStarted) {
     return <div>Ожидание старта игры...</div>;
@@ -73,14 +89,14 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
 
   return (
     <div className="game-container">
-      <h1>Игра для команды: {team && team.username ? team.username : 'Команда не определена'}</h1>
+      <h1>Игра для команды: {team?.username || 'Команда не определена'}</h1>
 
       {/* Отображение активных команд */}
       <div className="active-teams">
         <h2>Активные команды:</h2>
         <ul>
-          {activeTeams.map((team, index) => (
-            <li key={index}>{team}</li>
+          {activeTeams.map((activeTeam, index) => (
+            <li key={index}>{activeTeam}</li>
           ))}
         </ul>
       </div>
@@ -97,7 +113,6 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
             <div key={index} className="question-card">
               <p>{question.text}</p>
               <p>Максимальные баллы: {question.maxScore}</p>
-              {/* Поле для ввода ответа */}
               <input
                 type="text"
                 value={answers[index] || ''}
