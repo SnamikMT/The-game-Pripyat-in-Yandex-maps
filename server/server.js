@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const fs = require("fs");
 const cors = require("cors");
 const path = require("path");
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
@@ -56,6 +57,20 @@ const writeTeamsFile = async (teams) => {
   }
 };
 
+// Создаем хранилище для файлов с помощью multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Указываем папку для хранения файлов
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Уникальное имя файла
+  }
+});
+
+const upload = multer({ dest: 'uploads/' });
+
+// Статическая папка для доступа к загруженным изображениям
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Функция для загрузки и обработки данных ответов
 function loadAnswers() {
@@ -216,6 +231,62 @@ const getTeams = async () => {
   }
 };
 
+app.put('/api/blocks/:category/:blockNumber', upload.single('image'), (req, res) => {
+  const { category, blockNumber } = req.params;
+  const { title, description } = req.body;
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null; // URL загруженной картинки
+
+  readJsonFile(blocksDataFilePath).then((blocksData) => {
+    const categoryData = blocksData.find(c => c.category === category);
+    if (!categoryData) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    const block = categoryData.blocks.find(b => b.number === parseInt(blockNumber));
+    if (!block) {
+      return res.status(404).json({ message: 'Block not found' });
+    }
+
+    // Удаляем старое изображение, если оно существует
+    const oldImageUrl = block.imageUrl;
+    if (oldImageUrl) {
+      const oldImagePath = path.join(__dirname, 'uploads', path.basename(oldImageUrl));
+
+      fs.unlink(oldImagePath, (err) => {
+        if (err && err.code !== 'ENOENT') {
+          console.error('Error deleting old image:', err);
+          return res.status(500).json({ message: 'Error deleting old image' });
+        }
+
+        // Обновляем блок
+        block.title = title || block.title;
+        block.description = description || block.description;
+        if (imageUrl) {
+          block.imageUrl = imageUrl; // Сохраняем новый URL картинки
+        }
+
+        writeJsonFile(blocksDataFilePath, blocksData)
+          .then(() => res.json({ message: 'Block successfully updated', imageUrl }))
+          .catch((err) => res.status(500).json({ message: 'Error saving block data' }));
+      });
+    } else {
+      // Если старого изображения нет, просто обновляем блок
+      block.title = title || block.title;
+      block.description = description || block.description;
+      if (imageUrl) {
+        block.imageUrl = imageUrl; // Сохраняем новый URL картинки
+      }
+
+      writeJsonFile(blocksDataFilePath, blocksData)
+        .then(() => res.json({ message: 'Block successfully updated', imageUrl }))
+        .catch((err) => res.status(500).json({ message: 'Error saving block data' }));
+    }
+  }).catch((err) => {
+    console.error('Error reading blocks data:', err);
+    res.status(500).json({ message: 'Error reading blocks data' });
+  });
+});
+
 // Пример логики в статистике
 app.get('/api/teams', async (req, res) => {
   const teams = await readTeamsFile(); // Используйте await для асинхронного чтения
@@ -241,46 +312,57 @@ app.get('/api/blocks', (req, res) => {
   });
 });
 
-// Эндпоинт для обновления блока
-app.put('/api/blocks/:category/:number', (req, res) => {
+// API для обновления блока
+app.put('/api/blocks/:category/:number', upload.single('image'), (req, res) => {
   const { category, number } = req.params;
   const { title, description } = req.body;
+  const image = req.file;
 
-  fs.readFile(blocksDataFilePath, 'utf8', (err, data) => {
+  fs.readFile('./data/blocks.json', 'utf8', (err, data) => {
     if (err) {
-      console.error('Ошибка при чтении файла blocksData.json:', err);
-      return res.status(500).json({ message: 'Ошибка сервера' });
+      return res.status(500).json({ message: 'Error reading data' });
     }
-    try {
-      let blocksData = JSON.parse(data);
-      const categoryData = blocksData.find(cat => cat.category === category);
-      if (categoryData) {
-        const block = categoryData.blocks.find(b => b.number === parseInt(number));
-        if (block) {
-          // Обновляем данные блока
-          block.title = title || block.title;
-          block.description = description || block.description;
 
-          // Сохраняем обновленные данные
-          fs.writeFile(blocksDataFilePath, JSON.stringify(blocksData, null, 2), (writeErr) => {
-            if (writeErr) {
-              console.error('Ошибка при записи в файл blocksData.json:', writeErr);
-              return res.status(500).json({ message: 'Ошибка сервера' });
-            }
-            res.json({ message: 'Блок успешно обновлен' });
-          });
-        } else {
-          res.status(404).json({ message: 'Блок не найден' });
-        }
-      } else {
-        res.status(404).json({ message: 'Категория не найдена' });
-      }
-    } catch (parseErr) {
-      console.error('Ошибка при парсинге файла blocksData.json:', parseErr);
-      res.status(500).json({ message: 'Ошибка сервера' });
+    const blocksData = JSON.parse(data);
+    const categoryData = blocksData.find((cat) => cat.category === category);
+    if (!categoryData) {
+      return res.status(404).json({ message: 'Category not found' });
     }
+
+    const block = categoryData.blocks.find((block) => block.number === parseInt(number));
+    if (!block) {
+      return res.status(404).json({ message: 'Block not found' });
+    }
+
+    // Обновляем данные блока
+    block.title = title;
+    block.description = description;
+
+    // Если загружено новое изображение
+    if (image) {
+      const imagePath = path.join('uploads', image.filename + path.extname(image.originalname));
+      fs.rename(image.path, imagePath, (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Error saving image' });
+        }
+
+        // Обновляем путь к изображению в JSON
+        block.imageUrl = `${req.protocol}://${req.get('host')}/${imagePath}`;
+      });
+    }
+
+    // Сохраняем обновленные данные
+    fs.writeFile('./data/blocks.json', JSON.stringify(blocksData, null, 2), (err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error saving data' });
+      }
+
+      res.json({ message: 'Block successfully updated', imageUrl: block.imageUrl });
+    });
   });
 });
+
+
 
 
 // Логин
