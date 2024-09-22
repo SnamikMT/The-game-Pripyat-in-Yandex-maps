@@ -15,6 +15,7 @@ import AdminStatistics from "./components/AdminStatistics";
 import Progress from "./components/Progress";
 import Game from "./components/Game";
 import AddQuestion from "./components/AddQuestion";
+import MoveHistory from './components/MoveHistory';
 
 const socket = io("http://localhost:5000");
 
@@ -270,6 +271,7 @@ const App = () => {
                   <Route path="/add-team" element={<AddTeam />} />
                   <Route path="/manage-teams" element={<ManageTeams />} />
                   <Route path="/progress" element={<Progress teamsData={teamsData} />} />
+                  <Route path="/move-history" element={<MoveHistory />} />
                   <Route
                     path="/statistics"
                     element={

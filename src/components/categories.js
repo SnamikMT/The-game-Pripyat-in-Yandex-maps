@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Grid, Typography, Select, MenuItem, TextField, Button, FormControl, InputLabel, Card, CardContent, Checkbox, FormControlLabel } from "@mui/material";
-import config from "./config"; 
-import Background from './Background.jpg'; 
-import DocumentIcon from './document-icon.png'; 
-import VoiceMessageIcon from './voice-message-icon.png'; 
+import {
+  Grid,
+  Typography,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Card,
+  CardContent,
+  Checkbox,
+  FormControlLabel,
+} from "@mui/material";
+import config from "./config";
+import Background from './Background.jpg';
+import DocumentIcon from './document-icon.png';
+import VoiceMessageIcon from './voice-message-icon.png';
 
 const Categories = ({ team }) => {
   const [categories, setCategories] = useState([]);
@@ -15,8 +28,9 @@ const Categories = ({ team }) => {
   const [updatedImage, setUpdatedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false); // Флаг для отслеживания поиска
+  const [hasSearched, setHasSearched] = useState(false);
 
+  // Получение блоков при монтировании
   useEffect(() => {
     fetch('http://localhost:5000/api/blocks')
       .then(response => response.json())
@@ -24,19 +38,22 @@ const Categories = ({ team }) => {
       .catch(error => console.error('Error loading block data:', error));
   }, []);
 
+  // Обработка смены категории
   const handleCategoryChange = (event) => {
     setSelectedCategory(event.target.value);
     setFoundBlock(null);
-    setHasSearched(false); // Сбрасываем флаг поиска
+    setHasSearched(false);
   };
 
+  // Обработка ввода номера блока
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
     setFoundBlock(null);
-    setHasSearched(false); // Сбрасываем флаг поиска
+    setHasSearched(false);
   };
 
-  const handleSearch = () => {
+  // Поиск блока по категории и номеру
+  const handleSearch = async () => {
     const categoryData = categories.find(category => category.category === selectedCategory);
     if (categoryData) {
       const block = categoryData.blocks.find(block => block.number === parseInt(inputValue));
@@ -50,13 +67,40 @@ const Categories = ({ team }) => {
         setUpdatedDescription(block.description);
         setImagePreview(block.imageUrl ? `${config.BASE_URL}${block.imageUrl}` : "");
         setIsEditing(false);
+
+        // Увеличиваем количество ходов
+        if (team && team.username) {
+          await updateMoves(team.username);
+        }
       } else {
         setFoundBlock(null);
       }
     }
-    setHasSearched(true); // Устанавливаем флаг поиска
+    setHasSearched(true);
   };
 
+  // Обновление количества ходов через API
+  const updateMoves = async (teamName) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/update-moves', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ teamName }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        console.log(`Moves updated: ${result.moves}`);
+      } else {
+        console.error(result.message);
+      }
+    } catch (error) {
+      console.error('Error updating moves:', error);
+    }
+  };
+
+  // Обновление информации о блоке
   const updateBlock = () => {
     const formData = new FormData();
     formData.append("title", updatedTitle);
@@ -92,6 +136,7 @@ const Categories = ({ team }) => {
       .catch(error => console.error('Error updating block:', error));
   };
 
+  // Обработка изменения изображения
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -105,17 +150,17 @@ const Categories = ({ team }) => {
   };
 
   return (
-    <div 
-      style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh', 
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
         padding: "20px",
-        backgroundImage: `url(${Background})`, 
-        backgroundSize: 'cover', 
-        backgroundAttachment: 'fixed', 
-        backgroundPosition: 'center' 
+        backgroundImage: `url(${Background})`,
+        backgroundSize: 'cover',
+        backgroundAttachment: 'fixed',
+        backgroundPosition: 'center'
       }}
     >
       <div style={{ width: '100%', maxWidth: '600px', background: 'rgba(255, 255, 255, 0.8)', padding: '20px', borderRadius: '10px' }}>
@@ -123,7 +168,6 @@ const Categories = ({ team }) => {
           Block Interaction
         </Typography>
 
-        {/* Форма поиска */}
         <Grid container spacing={2} alignItems="center" style={{ marginBottom: "20px" }}>
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth>
@@ -161,11 +205,11 @@ const Categories = ({ team }) => {
 
         {foundBlock && (
           <Card>
-            <CardContent style={{ textAlign: 'center' }}> 
+            <CardContent style={{ textAlign: 'center' }}>
               <Typography variant="h5">{foundBlock.title}</Typography>
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {imagePreview && (
-                  <img 
+                  <img
                     src={imagePreview}
                     alt="Preview"
                     style={{ width: '30%', height: 'auto', marginTop: '10px', objectFit: 'contain' }}
@@ -184,18 +228,18 @@ const Categories = ({ team }) => {
                 <>
                   <FormControlLabel
                     control={
-                      <Checkbox 
-                        checked={foundBlock.showDocumentIcon} 
-                        onChange={() => setFoundBlock(prevBlock => ({ ...prevBlock, showDocumentIcon: !prevBlock.showDocumentIcon }))} 
+                      <Checkbox
+                        checked={foundBlock.showDocumentIcon}
+                        onChange={() => setFoundBlock(prevBlock => ({ ...prevBlock, showDocumentIcon: !prevBlock.showDocumentIcon }))}
                       />
                     }
                     label="Show Document Icon"
                   />
                   <FormControlLabel
                     control={
-                      <Checkbox 
-                        checked={foundBlock.showVoiceMessageIcon} 
-                        onChange={() => setFoundBlock(prevBlock => ({ ...prevBlock, showVoiceMessageIcon: !prevBlock.showVoiceMessageIcon }))} 
+                      <Checkbox
+                        checked={foundBlock.showVoiceMessageIcon}
+                        onChange={() => setFoundBlock(prevBlock => ({ ...prevBlock, showVoiceMessageIcon: !prevBlock.showVoiceMessageIcon }))}
                       />
                     }
                     label="Show Voice Message Icon"
@@ -206,47 +250,25 @@ const Categories = ({ team }) => {
                       <TextField
                         label="Update Title"
                         value={updatedTitle}
-                        onChange={e => setUpdatedTitle(e.target.value)}
+                        onChange={(e) => setUpdatedTitle(e.target.value)}
                         fullWidth
                       />
                       <TextField
                         label="Update Description"
                         value={updatedDescription}
-                        onChange={e => setUpdatedDescription(e.target.value)}
+                        onChange={(e) => setUpdatedDescription(e.target.value)}
                         fullWidth
-                        multiline
                       />
-                      <input type="file" onChange={handleImageChange} style={{ marginTop: "10px" }} />
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={updateBlock}
-                        style={{ marginTop: '20px' }}
-                      >
-                        Save
-                      </Button>
+                      <input type="file" accept="image/*" onChange={handleImageChange} />
+                      <Button variant="contained" color="primary" onClick={updateBlock}>Update Block</Button>
                     </>
                   ) : (
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => setIsEditing(true)}
-                      style={{ marginTop: '20px' }}
-                    >
-                      Edit Block
-                    </Button>
+                    <Button variant="outlined" color="secondary" onClick={() => setIsEditing(true)}>Edit</Button>
                   )}
                 </>
               )}
             </CardContent>
           </Card>
-        )}
-
-        {/* Сообщение, если поиск был выполнен, но блок не найден */}
-        {hasSearched && !foundBlock && (
-          <Typography variant="body2" color="error" style={{ marginTop: '20px', textAlign: 'center' }}>
-            Информации по этому запросу нет!
-          </Typography>
         )}
       </div>
     </div>

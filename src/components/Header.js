@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 // Функция для форматирования времени
@@ -27,6 +27,8 @@ const Header = ({
   const [minScore, setMinScore] = useState(0);
   const [maxScore, setMaxScore] = useState(10);
 
+  const navigate = useNavigate();  // Для перехода на страницу истории ходов
+
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -47,6 +49,11 @@ const Header = ({
 
   const toggleActions = () => {
     setShowActions(!showActions);
+  };
+
+   // Добавляем кнопку для перехода на страницу "История ходов"
+   const handleMoveHistory = () => {
+    navigate('/move-history');
   };
 
   const handleAddQuestion = async () => {
@@ -122,6 +129,7 @@ const Header = ({
             <>
               <li><Link to="/statistics">Statistics</Link></li>
               <li><Link to="/manage-teams">Manage Teams</Link></li>
+              <li><button onClick={handleMoveHistory}>История ходов</button></li> {/* Кнопка истории ходов */}
             </>
           )}
           <li><button onClick={onLogout}>Logout</button></li>

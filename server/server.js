@@ -6,6 +6,8 @@ const fs = require("fs");
 const cors = require("cors");
 const path = require("path");
 const multer = require('multer');
+const { updateMoves } = require('./moves');
+const { getTeamsData, recordTeamMove } = require('./teamsController');
 
 const app = express();
 const server = http.createServer(app);
@@ -273,7 +275,15 @@ app.put('/api/blocks/:category/:blockNumber', upload.single('image'), (req, res)
   });
 });
 
+// Маршрут для обработки действия категории
+app.post('/api/category-action', (req, res) => {
+  const { teamName, category } = req.body;
 
+  // Записываем действие команды
+  const updatedTeam = recordTeamMove(teamName, category);
+
+  res.status(200).json({ message: 'Action recorded', team: updatedTeam });
+});
 
 // Пример логики в статистике
 app.get('/api/teams', async (req, res) => {
@@ -500,15 +510,25 @@ app.post('/api/join-game', (req, res) => {
   if (gameState.gameStarted) {
     const existingTeam = gameState.teams.find(team => team.name === teamName);
     if (!existingTeam) {
-      gameState.teams.push({ name: teamName, moves: 0, points: 0 });
-      console.log(`Команда ${teamName} присоединилась к игре.`);
+      gameState.teams.push({ name: teamName, moves: 1, points: 0 });
+      console.log(`Команда ${teamName} присоединилась к игре и сделала первый ход.`);
+    } else {
+      existingTeam.moves += 1; // Инкрементируем количество ходов
+      console.log(`Команда ${teamName} сделала ход, общее количество ходов: ${existingTeam.moves}`);
     }
-    res.status(200).json({ message: `Команда ${teamName} успешно присоединилась.` });
+    res.status(200).json({ message: `Команда ${teamName} успешно присоединилась или сделала ход.` });
   } else {
     res.status(400).json({ message: "Игра ещё не началась." });
   }
 });
 
+
+// Эндпоинт для обновления ходов
+app.post('/api/update-moves', async (req, res) => {
+  const { teamName } = req.body; // Получите имя команды из запроса
+  const result = await updateMoves(teamName);
+  res.json(result);
+});
 
 app.post('/api/answers', (req, res) => {
   const { team, answers } = req.body;
