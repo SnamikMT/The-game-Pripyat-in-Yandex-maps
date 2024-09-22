@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios'; // Добавьте импорт axios
+import axios from 'axios'; 
 
-// Функция для форматирования времени
 const formatTime = (timeInSeconds) => {
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = timeInSeconds % 60;
@@ -9,7 +8,7 @@ const formatTime = (timeInSeconds) => {
 };
 
 const Game = ({ team, gameStarted, remainingTime, socket }) => {
-  const [joined, setJoined] = useState(false); // Отслеживаем, подключена ли команда
+  const [joined, setJoined] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [activeTeams, setActiveTeams] = useState([]);
@@ -19,33 +18,28 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
     const loadQuestions = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/questions');
-        const loadedQuestions = response.data.questions || []; // Извлекаем массив вопросов
-        console.log('Загруженные вопросы:', loadedQuestions);
-        setQuestions(loadedQuestions); // Устанавливаем массив вопросов
+        const loadedQuestions = response.data.questions || [];
+        setQuestions(loadedQuestions);
       } catch (error) {
         console.error('Ошибка загрузки вопросов:', error);
       }
-    };    
+    };
 
     loadQuestions();
 
-    // Присоединение команды к игре
     if (team && !joined) {
-      socket.emit('join_game', team); // Уведомить сервер о присоединении команды
-      setJoined(true); // Обновление состояния, что команда подключена
+      socket.emit('join_game', team);
+      setJoined(true);
     }
 
-    // Обновление списка активных команд
     socket.on('update_teams', (teams) => {
       setActiveTeams(teams);
     });
 
-    // Обновление таймера
     socket.on('timer_update', (newTime) => {
       setTimeLeft(newTime);
     });
 
-    // Очистка слушателей событий при размонтировании компонента
     return () => {
       socket.off('update_teams');
       socket.off('timer_update');
@@ -61,18 +55,15 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
 
   const handleSubmit = () => {
     socket.emit('submit_answers', { team, answers });
-    console.log('Ответы отправлены:', answers);
   };
 
-  // Обработка подключения команды
   const handleJoinGame = () => {
     if (team && !joined) {
       socket.emit('join_game', team);
-      setJoined(true); // Обновление состояния, что команда подключена
+      setJoined(true);
     }
   };
 
-  // Если команда еще не подключена
   if (!joined) {
     return (
       <div className="game-container">
@@ -82,7 +73,6 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
     );
   }
 
-  // Если игра не началась
   if (!gameStarted) {
     return <div>Ожидание старта игры...</div>;
   }
@@ -90,8 +80,6 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
   return (
     <div className="game-container">
       <h1>Игра для команды: {team?.username || 'Команда не определена'}</h1>
-
-      {/* Отображение активных команд */}
       <div className="active-teams">
         <h2>Активные команды:</h2>
         <ul>
@@ -100,13 +88,9 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
           ))}
         </ul>
       </div>
-
-      {/* Таймер */}
       <div className="timer">
-        Оставшееся время: {timeLeft !== null ? formatTime(timeLeft) : 'Время не установлено'}
+        Оставшееся время: {formatTime(timeLeft)}
       </div>
-
-      {/* Отображение вопросов с полями для ввода ответов */}
       <div className="questions-container">
         {questions.length ? (
           questions.map((question, index) => (
@@ -125,8 +109,6 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
           <div>Ожидание вопросов...</div>
         )}
       </div>
-
-      {/* Кнопка для отправки ответов */}
       <button onClick={handleSubmit}>Отправить ответы</button>
     </div>
   );

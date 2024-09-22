@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Grid, Typography, Select, MenuItem, TextField, Button, FormControl, InputLabel, Card, CardContent, Checkbox, FormControlLabel } from "@mui/material";
-import config from "./config"; // Импортируйте файл конфигурации
-import Background from './Background.jpg'; // Импортируем картинку для фона
-import DocumentIcon from './document-icon.png'; // Фиксированная картинка для "документика"
-import VoiceMessageIcon from './voice-message-icon.png'; // Фиксированная картинка для "голосового сообщения"
+import config from "./config"; 
+import Background from './Background.jpg'; 
+import DocumentIcon from './document-icon.png'; 
+import VoiceMessageIcon from './voice-message-icon.png'; 
 
 const Categories = ({ team }) => {
   const [categories, setCategories] = useState([]);
@@ -15,47 +15,46 @@ const Categories = ({ team }) => {
   const [updatedImage, setUpdatedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false); // Флаг для отслеживания поиска
 
-  // Состояния для галочек
-  const [showDocumentIcon, setShowDocumentIcon] = useState(false);
-  const [showVoiceMessageIcon, setShowVoiceMessageIcon] = useState(false);
-
-  // Загрузка категорий из API
   useEffect(() => {
     fetch('http://localhost:5000/api/blocks')
       .then(response => response.json())
-      .then(data => {
-        setCategories(data);
-      })
-      .catch(error => {
-        console.error('Error loading block data:', error);
-      });
+      .then(data => setCategories(data))
+      .catch(error => console.error('Error loading block data:', error));
   }, []);
 
   const handleCategoryChange = (event) => {
     setSelectedCategory(event.target.value);
     setFoundBlock(null);
+    setHasSearched(false); // Сбрасываем флаг поиска
   };
 
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
     setFoundBlock(null);
+    setHasSearched(false); // Сбрасываем флаг поиска
   };
 
   const handleSearch = () => {
-    const categoryData = categories.find((category) => category.category === selectedCategory);
+    const categoryData = categories.find(category => category.category === selectedCategory);
     if (categoryData) {
-      const block = categoryData.blocks.find((block) => block.number === parseInt(inputValue));
+      const block = categoryData.blocks.find(block => block.number === parseInt(inputValue));
       if (block) {
-        setFoundBlock(block);
+        setFoundBlock({
+          ...block,
+          showDocumentIcon: block.showDocumentIcon || false,
+          showVoiceMessageIcon: block.showVoiceMessageIcon || false,
+        });
         setUpdatedTitle(block.title);
         setUpdatedDescription(block.description);
-        setImagePreview(block.imageUrl || ""); // Установить изображение из блока
+        setImagePreview(block.imageUrl ? `${config.BASE_URL}${block.imageUrl}` : "");
         setIsEditing(false);
       } else {
         setFoundBlock(null);
       }
     }
+    setHasSearched(true); // Устанавливаем флаг поиска
   };
 
   const updateBlock = () => {
@@ -65,6 +64,8 @@ const Categories = ({ team }) => {
     if (updatedImage) {
       formData.append("image", updatedImage);
     }
+    formData.append("showDocumentIcon", foundBlock.showDocumentIcon);
+    formData.append("showVoiceMessageIcon", foundBlock.showVoiceMessageIcon);
 
     fetch(`http://localhost:5000/api/blocks/${encodeURIComponent(selectedCategory)}/${inputValue}`, {
       method: 'PUT',
@@ -78,32 +79,29 @@ const Categories = ({ team }) => {
             title: updatedTitle,
             description: updatedDescription,
             imageUrl: data.imageUrl || prevBlock.imageUrl,
+            showDocumentIcon: foundBlock.showDocumentIcon,
+            showVoiceMessageIcon: foundBlock.showVoiceMessageIcon,
           }));
-          setImagePreview(data.imageUrl || imagePreview); // Обновляем предварительный просмотр
+          setImagePreview(data.imageUrl || imagePreview);
           alert('Block successfully updated');
           setIsEditing(false);
         } else {
           alert(data.message);
         }
       })
-      .catch(error => {
-        console.error('Error updating block:', error);
-      });
+      .catch(error => console.error('Error updating block:', error));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (!file) {
+    if (file) {
+      setUpdatedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    } else {
       alert('Please select an image');
-      return;
     }
-
-    setUpdatedImage(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result); // Предварительный просмотр загружаемого изображения
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -114,9 +112,9 @@ const Categories = ({ team }) => {
         alignItems: 'center', 
         minHeight: '100vh', 
         padding: "20px",
-        backgroundImage: `url(${Background})`, // Устанавливаем фон
-        backgroundSize: 'cover', // Картинка будет покрывать весь экран
-        backgroundAttachment: 'fixed', // Фиксированная картинка фона
+        backgroundImage: `url(${Background})`, 
+        backgroundSize: 'cover', 
+        backgroundAttachment: 'fixed', 
         backgroundPosition: 'center' 
       }}
     >
@@ -124,7 +122,8 @@ const Categories = ({ team }) => {
         <Typography variant="h4" gutterBottom>
           Block Interaction
         </Typography>
-        
+
+        {/* Форма поиска */}
         <Grid container spacing={2} alignItems="center" style={{ marginBottom: "20px" }}>
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth>
@@ -134,7 +133,7 @@ const Categories = ({ team }) => {
                 value={selectedCategory}
                 onChange={handleCategoryChange}
               >
-                {categories.map((category) => (
+                {categories.map(category => (
                   <MenuItem key={category.category} value={category.category}>
                     {category.category}
                   </MenuItem>
@@ -142,7 +141,7 @@ const Categories = ({ team }) => {
               </Select>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={12} sm={6}>
             <TextField
               label="Enter Block Number"
@@ -152,7 +151,7 @@ const Categories = ({ team }) => {
               type="number"
             />
           </Grid>
-          
+
           <Grid item xs={12} sm={2}>
             <Button variant="contained" color="primary" fullWidth onClick={handleSearch}>
               Search
@@ -162,123 +161,92 @@ const Categories = ({ team }) => {
 
         {foundBlock && (
           <Card>
-            <CardContent style={{ textAlign: 'center' }}> {/* Центрирование содержимого */} 
+            <CardContent style={{ textAlign: 'center' }}> 
               <Typography variant="h5">{foundBlock.title}</Typography>
-              {foundBlock && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {imagePreview && (
                   <img 
-                    src={`${config.BASE_URL}${foundBlock.imageUrl}`} // Строим полный URL
+                    src={imagePreview}
                     alt="Preview"
-                    style={{ 
-                      width: '30%', 
-                      height: 'auto', 
-                      marginTop: '10px', 
-                      maxWidth: '100%', // Ограничиваем максимальную ширину изображения
-                      objectFit: 'contain', // Сохраняем пропорции изображения
-                    }}
+                    style={{ width: '30%', height: 'auto', marginTop: '10px', objectFit: 'contain' }}
                   />
-                  {/* Фиксированные картинки */}
-                  {showDocumentIcon && (
-                    <img
-                      src={DocumentIcon}
-                      alt="Document Icon"
-                      style={{ width: '10%', marginLeft: '10px' }}
-                    />
-                  )}
-                  {showVoiceMessageIcon && (
-                    <img
-                      src={VoiceMessageIcon}
-                      alt="Voice Message Icon"
-                      style={{ width: '10%', marginLeft: '10px' }}
-                    />
-                  )}
-                </div>
-              )}
-
+                )}
+                {foundBlock.showDocumentIcon && (
+                  <img src={DocumentIcon} alt="Document Icon" style={{ width: '10%', marginLeft: '10px' }} />
+                )}
+                {foundBlock.showVoiceMessageIcon && (
+                  <img src={VoiceMessageIcon} alt="Voice Message Icon" style={{ width: '10%', marginLeft: '10px' }} />
+                )}
+              </div>
               <Typography variant="body1">{foundBlock.description}</Typography>
 
               {team && team.role === 'admin' && (
                 <>
-                  {/* Галочки для администратора */}
                   <FormControlLabel
                     control={
-                      <Checkbox
-                        checked={showDocumentIcon}
-                        onChange={(e) => setShowDocumentIcon(e.target.checked)}
+                      <Checkbox 
+                        checked={foundBlock.showDocumentIcon} 
+                        onChange={() => setFoundBlock(prevBlock => ({ ...prevBlock, showDocumentIcon: !prevBlock.showDocumentIcon }))} 
                       />
                     }
                     label="Show Document Icon"
                   />
                   <FormControlLabel
                     control={
-                      <Checkbox
-                        checked={showVoiceMessageIcon}
-                        onChange={(e) => setShowVoiceMessageIcon(e.target.checked)}
+                      <Checkbox 
+                        checked={foundBlock.showVoiceMessageIcon} 
+                        onChange={() => setFoundBlock(prevBlock => ({ ...prevBlock, showVoiceMessageIcon: !prevBlock.showVoiceMessageIcon }))} 
                       />
                     }
                     label="Show Voice Message Icon"
                   />
-                  
-                  <Button 
-                    variant="contained" 
-                    color={isEditing ? "secondary" : "primary"} 
-                    onClick={() => setIsEditing(!isEditing)}
-                    style={{ marginTop: "10px" }}
-                  >
-                    {isEditing ? 'Cancel Edit' : 'Edit'}
-                  </Button>
-                  {isEditing && (
+
+                  {isEditing ? (
                     <>
                       <TextField
-                        label="New Title"
-                        fullWidth
+                        label="Update Title"
                         value={updatedTitle}
-                        onChange={(e) => setUpdatedTitle(e.target.value)}
-                        style={{ marginTop: "10px" }}
+                        onChange={e => setUpdatedTitle(e.target.value)}
+                        fullWidth
                       />
                       <TextField
-                        label="New Description"
-                        fullWidth
+                        label="Update Description"
                         value={updatedDescription}
-                        onChange={(e) => setUpdatedDescription(e.target.value)}
-                        style={{ marginTop: "10px", marginBottom: "10px" }}
+                        onChange={e => setUpdatedDescription(e.target.value)}
+                        fullWidth
+                        multiline
                       />
-                      <Button
-                        variant="contained"
-                        component="label"
-                        style={{ marginBottom: "10px" }}
-                      >
-                        Upload Image
-                        <input
-                          type="file"
-                          accept="image/*"
-                          hidden
-                          onChange={handleImageChange}
-                        />
-                      </Button>
-                      {imagePreview && (
-                        <div>
-                          <Typography variant="caption">Preview:</Typography>
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            style={{ width: "100%", maxHeight: "300px", objectFit: "contain" }}
-                          />
-                        </div>
-                      )}
+                      <input type="file" onChange={handleImageChange} style={{ marginTop: "10px" }} />
                       <Button
                         variant="contained"
                         color="primary"
                         onClick={updateBlock}
+                        style={{ marginTop: '20px' }}
                       >
-                        Save Changes
+                        Save
                       </Button>
                     </>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => setIsEditing(true)}
+                      style={{ marginTop: '20px' }}
+                    >
+                      Edit Block
+                    </Button>
                   )}
                 </>
               )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Сообщение, если поиск был выполнен, но блок не найден */}
+        {hasSearched && !foundBlock && (
+          <Typography variant="body2" color="error" style={{ marginTop: '20px', textAlign: 'center' }}>
+            Информации по этому запросу нет!
+          </Typography>
         )}
       </div>
     </div>

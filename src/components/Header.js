@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+// Функция для форматирования времени
+const formatTime = (timeInSeconds) => {
+  const minutes = Math.floor(timeInSeconds / 60);
+  const seconds = timeInSeconds % 60;
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+};
+
 const Header = ({
   team,
   onLogout,
@@ -20,7 +27,6 @@ const Header = ({
   const [minScore, setMinScore] = useState(0);
   const [maxScore, setMaxScore] = useState(10);
 
-  // Fetch questions from the server when the component mounts
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -30,23 +36,19 @@ const Header = ({
         console.error('Error loading questions:', error);
       }
     };
-
     fetchQuestions();
   }, []);
 
   useEffect(() => {
-    // Получение вопросов после старта игры
     socket.on('game_started', (questions) => {
       setQuestions(questions);
     });
   }, [socket]);
 
-  // Toggle actions visibility
   const toggleActions = () => {
     setShowActions(!showActions);
   };
 
-  // Add a new question
   const handleAddQuestion = async () => {
     try {
       const response = await axios.post('http://localhost:5000/api/add-question', {
@@ -65,7 +67,6 @@ const Header = ({
     }
   };
 
-  // Delete a question
   const handleDeleteQuestion = async (index) => {
     try {
       const response = await axios.post('http://localhost:5000/api/delete-question', { index });
@@ -75,7 +76,6 @@ const Header = ({
     }
   };
 
-  // Start the game
   const handleStartGame = async () => {
     try {
       await axios.post('http://localhost:5000/api/clear-answers');
@@ -84,7 +84,6 @@ const Header = ({
       });
 
       const serverQuestions = response.data.questions;
-
       if (serverQuestions && serverQuestions.length > 0) {
         setLocalQuestions(serverQuestions);
         setQuestions(serverQuestions);
@@ -98,7 +97,6 @@ const Header = ({
     }
   };
 
-  // End the game
   const handleEndGame = async () => {
     try {
       await axios.post('http://localhost:5000/api/end-game');
@@ -111,7 +109,11 @@ const Header = ({
   };
 
   return (
-    <header>
+    <header className="header-container">
+      <div className="left-timer">
+        <span>Time left: {formatTime(remainingTime)}</span>
+      </div>
+
       <nav>
         <ul>
           <li><Link to="/categories">Categories</Link></li>
@@ -126,9 +128,13 @@ const Header = ({
         </ul>
       </nav>
 
+      <div className="right-user">
+        <span>{team?.username}</span>
+      </div>
+
       {team.role === 'admin' && (
         <div className="admin-actions">
-          <button onClick={toggleActions}>Actions</button>
+          <button onClick={toggleActions} className="action-button">Actions</button>
           {showActions && (
             <div className="dropdown-actions">
               <label>Game Duration (min):</label>
@@ -160,7 +166,7 @@ const Header = ({
                 onChange={(e) => setMaxScore(e.target.value)}
                 placeholder="Max score"
               />
-              <button onClick={handleAddQuestion}>Add Question</button>
+              <button onClick={handleAddQuestion} className="action-button">Add Question</button>
 
               <div>
                 <h4>Question List:</h4>
@@ -169,7 +175,7 @@ const Header = ({
                     localQuestions.map((q, index) => (
                       <li key={index}>
                         {q.text} (Score: {q.minScore} - {q.maxScore})
-                        <button onClick={() => handleDeleteQuestion(index)}>Delete</button>
+                        <button onClick={() => handleDeleteQuestion(index)} className="action-button">Delete</button>
                       </li>
                     ))
                   ) : (
@@ -178,8 +184,8 @@ const Header = ({
                 </ul>
               </div>
 
-              <button onClick={handleStartGame}>Start Game</button>
-              <button onClick={handleEndGame}>End Game</button>
+              <button onClick={handleStartGame} className="action-button">Start Game</button>
+              <button onClick={handleEndGame} className="action-button">End Game</button>
             </div>
           )}
         </div>

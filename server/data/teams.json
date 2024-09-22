@@ -5,13 +5,15 @@
     "isPrepared": false,
     "inGame": false,
     "answers": [],
-    "points": 8
+    "points": 8,
+    "moves": 0
   },
   {
     "username": "rob",
     "role": "user",
     "isPrepared": false,
     "inGame": false,
-    "answers": []
+    "answers": [],
+    "moves": 0
   }
 ]

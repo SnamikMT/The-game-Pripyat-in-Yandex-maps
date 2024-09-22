@@ -1,128 +1,219 @@
 /* styles.css */
-header {
-    background-color: #1a1a1a; /* Dark, industrial vibe */
-    padding: 20px;
-    border-bottom: 2px solid #e63946; /* Red highlight resembling danger/alert */
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background-color: #fff;
+  border-bottom: 2px solid #ddd;
+}
+
+.left-timer {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
+}
+
+nav ul {
+  list-style-type: none;
+  display: flex;
+  gap: 15px;
+  padding: 0;
+  margin: 0;
+}
+
+nav ul li {
+  display: inline;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: #007BFF;
+}
+
+.right-user {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #333;
+}
+
+.admin-actions {
+  margin-left: 20px;
+}
+
+.action-button {
+  background-color: #007BFF;
+  color: #fff;
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #0056b3;
+}
+
+.dropdown-actions {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.dropdown-actions input {
+  margin: 5px 0;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
   }
-  
+
+  .left-timer, .right-user, .admin-actions {
+    margin-top: 10px;
+  }
+
   nav ul {
-    list-style-type: none;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
+    flex-direction: column;
+    gap: 10px;
   }
-  
-  nav ul li {
-    margin: 0 10px;
-  }
-  
-  nav ul li a {
-    color: #f4f4f4;
-    text-decoration: none;
-    font-weight: bold;
-    text-transform: uppercase;
-    font-family: 'Roboto', sans-serif;
-    letter-spacing: 1px;
-  }
-  
-  nav ul li a:hover {
-    color: #e63946; /* Red color on hover */
-  }
-  
-  button {
-    background-color: #e63946;
-    border: none;
-    padding: 10px 20px;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background-color: #d62828; /* Darker red for hover */
-  }
-  
+}
+
+
+/* Стили для выпадающего меню действий админа */
+.admin-actions {
+  margin-top: 20px;
+  background-color: #333; /* Темный фон для выпадающего меню */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-actions {
+  margin-top: 10px;
+  background-color: #444; /* Более светлый фон для внутреннего меню */
+  padding: 15px;
+  border-radius: 5px;
+  color: #f4f4f4;
+}
+
+.dropdown-actions label {
+  display: block;
+  margin-top: 10px;
+}
+
+.dropdown-actions input {
+  padding: 8px;
+  margin: 5px 0;
+  border: 1px solid #666; /* Темная рамка для полей ввода */
+  border-radius: 5px;
+  width: auto; /* Изменяем ширину на авто */
+  max-width: 200px; /* Устанавливаем максимальную ширину */
+}
+
+.dropdown-actions button {
+  background-color: #e63946;
+  border: none;
+  padding: 10px 15px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+.dropdown-actions button:hover {
+  background-color: #d62828;
+}
+
 
   /* styles.css (continued) */
-.game-room {
-    background-color: #333;
-    color: #f4f4f4;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-    max-width: 800px;
-    margin: 20px auto;
-  }
-  
-  .game-room h2, h3 {
-    color: #e63946;
-  }
-  
-  form input {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: none;
-    border-radius: 5px;
-    background-color: #1a1a1a;
-    color: white;
-  }
-  
-  form button {
-    background-color: #e63946;
-    border: none;
-    padding: 10px 20px;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 5px;
-  }
-  
-  form button:hover {
-    background-color: #d62828;
-  }
-  
-  ul {
-    list-style-type: none;
-  }
-  
-  ul li {
-    padding: 10px;
-    background-color: #444;
-    margin-bottom: 5px;
-    border-radius: 5px;
-  }
-  
+/* styles.css */
+.game-container {
+  background-color: #1e1e1e; /* Темный фон для блока игры */
+  color: #f4f4f4; /* Светлый текст */
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+  max-width: 800px;
+  margin: 20px auto;
+}
 
+.game-container h1 {
+  color: #e63946; /* Красный заголовок */
+}
 
-  .team-cards-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-  
-  .team-card {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-    width: 300px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .team-card h3 {
-    margin-bottom: 10px;
-  }
-  
-  .team-card ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .team-card li {
-    margin-bottom: 5px;
-  }
-  
+.active-teams {
+  margin-bottom: 20px;
+}
+
+.active-teams h2 {
+  color: #e63946; /* Красный заголовок для активных команд */
+}
+
+.timer {
+  font-size: 1.5em;
+  color: #e63946; /* Красный цвет таймера */
+  margin-bottom: 20px;
+}
+
+.questions-container {
+  margin-bottom: 20px;
+}
+
+.question-card {
+  background-color: #333; /* Тёмный фон для карточек вопросов */
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.question-card p {
+  margin: 0 0 10px; /* Отступы для текстов в карточках */
+}
+
+.question-card input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: none;
+  border-radius: 5px;
+  background-color: #222; /* Темный фон для полей ввода */
+  color: #f4f4f4; /* Светлый текст */
+}
+
+button {
+  background-color: #e63946; /* Красный фон для кнопок */
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #d62828; /* Темный красный при наведении */
+}
+
+ul {
+  list-style-type: none;
+}
+
+ul li {
+  background-color: #444; /* Фон для списка активных команд */
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
+
 
   /* styles.css */
 
@@ -213,3 +304,61 @@ table tr:nth-child(even) {
   width: 300px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
+
+/* styles.css */
+
+/* Стили для ManageTeams */
+.manage-teams {
+  padding: 20px;
+  background-color: #1a1a1a; /* Темный фон для компонента */
+  color: #f4f4f4; /* Светлый текст */
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.manage-teams h2 {
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+.manage-teams p {
+  color: #e63946; /* Красный цвет для сообщений об ошибках */
+}
+
+.manage-teams ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.manage-teams li {
+  display: flex;
+  justify-content: space-between; /* Выравнивание текста и кнопки */
+  align-items: center;
+  background-color: #333; /* Темный фон для каждого элемента списка */
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 5px;
+  transition: background-color 0.3s; /* Плавный переход при наведении */
+}
+
+.manage-teams li:hover {
+  background-color: #444; /* Светлее фон при наведении */
+}
+
+.manage-teams button {
+  background-color: #e63946; /* Красный фон для кнопки удаления */
+  border: none;
+  padding: 8px 12px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s; /* Плавный переход при наведении */
+}
+
+.manage-teams button:hover {
+  background-color: #d62828; /* Более темный красный при наведении */
+}
+
+

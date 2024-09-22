@@ -233,8 +233,8 @@ const getTeams = async () => {
 
 app.put('/api/blocks/:category/:blockNumber', upload.single('image'), (req, res) => {
   const { category, blockNumber } = req.params;
-  const { title, description } = req.body;
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null; // URL загруженной картинки
+  const { title, description, showDocumentIcon, showVoiceMessageIcon } = req.body;
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   readJsonFile(blocksDataFilePath).then((blocksData) => {
     const categoryData = blocksData.find(c => c.category === category);
@@ -247,45 +247,33 @@ app.put('/api/blocks/:category/:blockNumber', upload.single('image'), (req, res)
       return res.status(404).json({ message: 'Block not found' });
     }
 
-    // Удаляем старое изображение, если оно существует
-    const oldImageUrl = block.imageUrl;
-    if (oldImageUrl) {
-      const oldImagePath = path.join(__dirname, 'uploads', path.basename(oldImageUrl));
-
+    // Удаление старого изображения, если оно заменяется
+    if (block.imageUrl && imageUrl && block.imageUrl !== imageUrl) {
+      const oldImagePath = path.join(__dirname, 'uploads', path.basename(block.imageUrl));
       fs.unlink(oldImagePath, (err) => {
         if (err && err.code !== 'ENOENT') {
           console.error('Error deleting old image:', err);
-          return res.status(500).json({ message: 'Error deleting old image' });
         }
-
-        // Обновляем блок
-        block.title = title || block.title;
-        block.description = description || block.description;
-        if (imageUrl) {
-          block.imageUrl = imageUrl; // Сохраняем новый URL картинки
-        }
-
-        writeJsonFile(blocksDataFilePath, blocksData)
-          .then(() => res.json({ message: 'Block successfully updated', imageUrl }))
-          .catch((err) => res.status(500).json({ message: 'Error saving block data' }));
       });
-    } else {
-      // Если старого изображения нет, просто обновляем блок
-      block.title = title || block.title;
-      block.description = description || block.description;
-      if (imageUrl) {
-        block.imageUrl = imageUrl; // Сохраняем новый URL картинки
-      }
-
-      writeJsonFile(blocksDataFilePath, blocksData)
-        .then(() => res.json({ message: 'Block successfully updated', imageUrl }))
-        .catch((err) => res.status(500).json({ message: 'Error saving block data' }));
     }
+
+    // Обновляем блок данными
+    block.title = title || block.title;
+    block.description = description || block.description;
+    block.imageUrl = imageUrl || block.imageUrl; // Если нет нового изображения, сохраняем старое
+    block.showDocumentIcon = showDocumentIcon === 'true'; // Сохраняем статус галочки
+    block.showVoiceMessageIcon = showVoiceMessageIcon === 'true'; // Сохраняем статус галочки
+
+    writeJsonFile(blocksDataFilePath, blocksData)
+      .then(() => res.json({ message: 'Block successfully updated', imageUrl }))
+      .catch((err) => res.status(500).json({ message: 'Error saving block data' }));
   }).catch((err) => {
     console.error('Error reading blocks data:', err);
     res.status(500).json({ message: 'Error reading blocks data' });
   });
 });
+
+
 
 // Пример логики в статистике
 app.get('/api/teams', async (req, res) => {
@@ -435,9 +423,6 @@ app.post('/api/prepare-team', (req, res) => {
     }
   });
 });
-
-
-
 
 // Получить всех пользователей
 app.get("/api/users", (req, res) => {
@@ -820,6 +805,35 @@ io.on('connection', (socket) => {
       io.emit('update_teams', currentTeams);
     }
   });  
+
+  socket.on('search_in_category', async (team) => {
+    try {
+      // Чтение текущих данных из файла teams.json
+      let teams = await fs.promises.readFile(teamsFilePath, 'utf-8');
+      teams = teams ? JSON.parse(teams) : [];
+  
+      // Найдите команду в массиве команд
+      const teamIndex = teams.findIndex(t => t.username === team.username);
+  
+      if (teamIndex >= 0) {
+        // Увеличьте количество ходов на 1
+        teams[teamIndex].moves = (teams[teamIndex].moves || 0) + 1;
+  
+        // Сохраните обновленные данные
+        await writeTeamsFile(teams);
+  
+        console.log(`Количество ходов для команды ${team.username} увеличено до ${teams[teamIndex].moves}`);
+        
+        // Отправьте обновленные данные всем клиентам, если нужно
+        io.emit('team_moves_updated', teams);
+      } else {
+        console.error('Команда не найдена');
+      }
+    } catch (error) {
+      console.error('Ошибка при обновлении количества ходов:', error);
+    }
+  });
+  
   
 
 // Usage in your socket event
