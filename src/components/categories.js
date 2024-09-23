@@ -53,31 +53,53 @@ const Categories = ({ team }) => {
   };
 
   // Поиск блока по категории и номеру
-  const handleSearch = async () => {
-    const categoryData = categories.find(category => category.category === selectedCategory);
-    if (categoryData) {
-      const block = categoryData.blocks.find(block => block.number === parseInt(inputValue));
-      if (block) {
-        setFoundBlock({
-          ...block,
-          showDocumentIcon: block.showDocumentIcon || false,
-          showVoiceMessageIcon: block.showVoiceMessageIcon || false,
-        });
-        setUpdatedTitle(block.title);
-        setUpdatedDescription(block.description);
-        setImagePreview(block.imageUrl ? `${config.BASE_URL}${block.imageUrl}` : "");
-        setIsEditing(false);
+const handleSearch = async () => {
+  const categoryData = categories.find(category => category.category === selectedCategory);
+  if (categoryData) {
+    const block = categoryData.blocks.find(block => block.number === parseInt(inputValue));
+    if (block) {
+      setFoundBlock({
+        ...block,
+        showDocumentIcon: block.showDocumentIcon || false,
+        showVoiceMessageIcon: block.showVoiceMessageIcon || false,
+      });
+      setUpdatedTitle(block.title);
+      setUpdatedDescription(block.description);
+      setImagePreview(block.imageUrl ? `${config.BASE_URL}${block.imageUrl}` : "");
+      setIsEditing(false);
 
-        // Увеличиваем количество ходов
-        if (team && team.username) {
-          await updateMoves(team.username);
-        }
-      } else {
-        setFoundBlock(null);
+      // Увеличиваем количество ходов и записываем историю
+      if (team && team.username) {
+        await updateMoves(team.username);
+        await saveSearchHistory(team.username, block.number, selectedCategory);
       }
+    } else {
+      setFoundBlock(null);
     }
-    setHasSearched(true);
-  };
+  }
+  setHasSearched(true);
+};
+
+// Функция для сохранения истории поиска
+const saveSearchHistory = async (teamName, blockNumber, category) => {
+  try {
+    const response = await fetch('http://localhost:5000/api/save-history', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ teamName, blockNumber, category }),
+    });
+    const result = await response.json();
+    if (result.message === 'История поиска сохранена') {
+      console.log('История поиска успешно записана');
+    } else {
+      console.error(result.message);
+    }
+  } catch (error) {
+    console.error('Ошибка при записи истории поиска:', error);
+  }
+};
 
   // Обновление количества ходов через API
   const updateMoves = async (teamName) => {

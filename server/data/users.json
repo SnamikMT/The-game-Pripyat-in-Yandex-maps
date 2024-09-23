@@ -3,17 +3,20 @@
     {
       "username": "admin",
       "password": "123",
-      "role": "admin"
+      "role": "admin",
+      "isHidden": false
     },
     {
       "username": "moder",
       "password": "655",
-      "role": "admin"
+      "role": "admin",
+      "isHidden": true
     },
     {
       "username": "rob",
-      "password": "123",
-      "role": "user"
+      "password": "444",
+      "role": "user",
+      "isHidden": false
     }
   ]
 }

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// Функция для форматирования времени
+// Function to format time
 const formatTime = (timeInSeconds) => {
+  if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = timeInSeconds % 60;
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 };
+
 
 const Header = ({
   team,
@@ -27,7 +29,7 @@ const Header = ({
   const [minScore, setMinScore] = useState(0);
   const [maxScore, setMaxScore] = useState(10);
 
-  const navigate = useNavigate();  // Для перехода на страницу истории ходов
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -45,14 +47,27 @@ const Header = ({
     socket.on('game_started', (questions) => {
       setQuestions(questions);
     });
-  }, [socket]);
+
+    socket.on('timer_update', (timeLeft) => {
+      const totalTimeInSeconds = timeLeft.minutes * 60 + timeLeft.seconds;
+      setRemainingTime(totalTimeInSeconds);
+      if (totalTimeInSeconds <= 0) {
+        setRemainingTime(0);
+        alert('Время истекло!');
+      }
+    });
+
+    return () => {
+      socket.off('game_started');
+      socket.off('timer_update');
+    };
+  }, [socket, setQuestions, setRemainingTime]);
 
   const toggleActions = () => {
     setShowActions(!showActions);
   };
 
-   // Добавляем кнопку для перехода на страницу "История ходов"
-   const handleMoveHistory = () => {
+  const handleMoveHistory = () => {
     navigate('/move-history');
   };
 
@@ -87,22 +102,24 @@ const Header = ({
     try {
       await axios.post('http://localhost:5000/api/clear-answers');
       const response = await axios.post('http://localhost:5000/api/start-game', {
-        duration: gameDuration,
+        duration: gameDuration * 60, // Передаем в секундах
       });
-
+  
+      socket.emit('start_game', gameDuration * 60); // Уведомляем сервер о старте игры с длительностью в секундах
+  
       const serverQuestions = response.data.questions;
       if (serverQuestions && serverQuestions.length > 0) {
         setLocalQuestions(serverQuestions);
         setQuestions(serverQuestions);
       }
-
-      socket.emit('game_started', serverQuestions);
+  
       setGameStarted(true);
-      setRemainingTime(gameDuration * 60);
+      setRemainingTime(gameDuration * 60); // Устанавливаем оставшееся время на клиенте
     } catch (error) {
       console.error('Error starting game:', error);
     }
-  };
+  };  
+  
 
   const handleEndGame = async () => {
     try {
@@ -115,21 +132,29 @@ const Header = ({
     }
   };
 
+  const handleSendForceMessage = () => {
+    const message = {
+      time: '11:55',
+      text: 'На улице к вам подошел мужчина средних лет, представился другом и произнес: Меня просили передать, что ищут с вами встречи, есть тут у нас один чудик, в свое время работал на "Юпитере", он-то вас и ждет, говорит, у него для вас интересная информация.',
+    };
+  
+    socket.emit('force_message', message);
+  };
+  
+
   return (
     <header className="header-container">
-      <div className="left-timer">
-        <span>Time left: {formatTime(remainingTime)}</span>
-      </div>
+    <span className="timer-text">Time left: {formatTime(remainingTime)}</span>
 
       <nav>
         <ul>
           <li><Link to="/categories">Categories</Link></li>
           <li><Link to="/game">Game</Link></li>
+          <li><Link to="/statistics">Statistics</Link></li>
           {team.role === 'admin' && (
             <>
-              <li><Link to="/statistics">Statistics</Link></li>
               <li><Link to="/manage-teams">Manage Teams</Link></li>
-              <li><button onClick={handleMoveHistory}>История ходов</button></li> {/* Кнопка истории ходов */}
+              <li><button onClick={handleMoveHistory}>История ходов</button></li>
             </>
           )}
           <li><button onClick={onLogout}>Logout</button></li>
@@ -145,6 +170,12 @@ const Header = ({
           <button onClick={toggleActions} className="action-button">Actions</button>
           {showActions && (
             <div className="dropdown-actions">
+
+          <h3>Send Force Message</h3>
+            <button onClick={handleSendForceMessage} className="action-button">
+              Send Force Message to All Players
+            </button>
+
               <label>Game Duration (min):</label>
               <input
                 type="number"

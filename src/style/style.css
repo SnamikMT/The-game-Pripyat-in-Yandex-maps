@@ -361,4 +361,112 @@ table tr:nth-child(even) {
   background-color: #d62828; /* Более темный красный при наведении */
 }
 
+/* Стили для истории */
 
+.move-history-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Высота экрана */
+  text-align: center;
+}
+
+.team-card {
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 60%; /* Фиксированная ширина для выравнивания */
+}
+
+.move-card {
+  background-color: #fff;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.block-preview img {
+  display: block;
+  margin: 10px auto;
+}
+
+
+/* Game */
+
+.waiting-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Заполняет всю высоту экрана */
+  background-color: #f0f8ff; /* Светлый фон */
+}
+
+.waiting-message {
+  font-size: 2rem; /* Размер шрифта */
+  color: #ff6347; /* Цвет текста */
+  text-align: center; /* Центрируем текст */
+  font-weight: bold; /* Жирный шрифт */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* Тень текста */
+}
+
+
+/* Статистика */
+
+.admin-statistics {
+  padding: 20px;
+  background-color: #f9f9f9; /* Светлый фон для всего контейнера */
+  border-radius: 8px;
+}
+
+h2, h3 {
+  color: #333; /* Цвет заголовков */
+}
+
+.teams-table {
+  width: 100%;
+  border-collapse: collapse; /* Убирает двойные границы */
+  margin-bottom: 20px; /* Отступ снизу */
+}
+
+.teams-table th, .teams-table td {
+  border: 1px solid #ddd; /* Граница ячеек */
+  padding: 12px; /* Внутренний отступ */
+  text-align: left; /* Выравнивание текста в ячейках */
+}
+
+.teams-table th {
+  background-color: #4CAF50; /* Цвет фона заголовка таблицы */
+  color: white; /* Цвет текста заголовка таблицы */
+}
+
+.teams-table tr:nth-child(even) {
+  background-color: #f2f2f2; /* Цвет фона для четных строк */
+}
+
+.teams-table tr:hover {
+  background-color: #ddd; /* Цвет фона при наведении на строку */
+}
+
+.answers-container {
+  margin-top: 20px;
+  background-color: #fff; /* Белый фон для контейнера ответов */
+  border: 1px solid #ddd; /* Граница контейнера ответов */
+  padding: 10px; /* Внутренний отступ */
+  border-radius: 8px; /* Закругленные углы */
+}
+
+.answer-card {
+  margin-bottom: 15px; /* Отступ между карточками ответов */
+  padding: 10px; /* Внутренний отступ для карточки ответа */
+  border: 1px solid #ccc; /* Граница карточки */
+  border-radius: 5px; /* Закругленные углы карточки */
+  background-color: #f9f9f9; /* Светлый фон для карточки */
+}
+
+.score-input {
+  margin-top: 10px; /* Отступ сверху для поля ввода очков */
+}

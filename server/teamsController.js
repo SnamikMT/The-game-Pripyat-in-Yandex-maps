@@ -1,64 +1,69 @@
 const fs = require('fs');
 const path = require('path');
 
+// Путь к файлу teams.json
 const teamsFilePath = path.join(__dirname, 'data', 'teams.json');
 
-// Функция для чтения teams.json
+// Функция для чтения данных из teams.json
 const getTeamsData = () => {
   try {
     const data = fs.readFileSync(teamsFilePath, 'utf-8');
-    return JSON.parse(data);
+    return JSON.parse(data);  // Парсим JSON
   } catch (error) {
     console.error('Error reading teams file:', error);
-    return [];
+    return [];  // Если файл не найден, возвращаем пустой массив
   }
 };
 
-// Функция для записи обновленных данных в teams.json
+// Функция для сохранения данных в teams.json
 const saveTeamsData = (teams) => {
   try {
     fs.writeFileSync(teamsFilePath, JSON.stringify(teams, null, 2), 'utf-8');
+    console.log('Teams data successfully saved!');  // Лог для успешной записи
   } catch (error) {
     console.error('Error writing to teams file:', error);
   }
 };
 
-// Функция для обработки хода команды (запись действия)
+// Функция для записи хода команды
 const recordTeamMove = (teamName, category) => {
-  let teams = getTeamsData();
+  let teams = getTeamsData();  // Чтение текущих данных
 
   // Поиск команды по имени
   let team = teams.find(t => t.name === teamName);
-  
+
+  // Если команды нет, создаем новую
   if (!team) {
-    // Если команды нет, создаем новую
+    console.log(`Creating new team: ${teamName}`);
     team = {
       name: teamName,
-      history: []  // Создаем массив history для новой команды
+      history: []  // Инициализация массива history
     };
-    teams.push(team);
+    teams.push(team);  // Добавляем команду в массив
   }
 
-  // Проверка, есть ли у команды массив history, и создание его, если нет
+  // Проверка, есть ли у команды массив history, если нет - создаем его
   if (!team.history) {
+    console.log(`Initializing history for team: ${teamName}`);
     team.history = [];
   }
 
-  // Добавляем новый ход в историю
-  team.history.push({
+  // Добавляем новое действие в массив history
+  const newMove = {
     category: category,
-    timestamp: new Date().toISOString(),
-  });
+    timestamp: new Date().toISOString()
+  };
+  team.history.push(newMove);
+  console.log(`Added new move for team ${teamName}:`, newMove);  // Лог для проверки
 
-  // Сохраняем обновленные данные
+  // Сохраняем обновленные данные в файл
   saveTeamsData(teams);
 
-  return team;  // Возвращаем обновленные данные команды
+  return team;  // Возвращаем обновленную команду
 };
 
-// Экспорт функций для использования в других файлах
+// Экспортируем функции для использования в других файлах
 module.exports = {
   getTeamsData,
-  saveTeamsData,
   recordTeamMove,
 };

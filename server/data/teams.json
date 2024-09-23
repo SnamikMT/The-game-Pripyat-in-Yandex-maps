@@ -5,8 +5,45 @@
     "isPrepared": false,
     "inGame": false,
     "answers": [],
-    "points": 8,
-    "moves": 10
+    "points": 32,
+    "moves": 25,
+    "history": [
+      {
+        "blockNumber": 3,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-22T18:07:01.093Z"
+      },
+      {
+        "blockNumber": 3,
+        "category": "А (люди)",
+        "timestamp": "2024-09-22T18:07:38.416Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-22T18:25:10.169Z"
+      },
+      {
+        "blockNumber": 2,
+        "category": "С (транспорт и строения)",
+        "timestamp": "2024-09-22T18:42:50.030Z"
+      },
+      {
+        "blockNumber": 11,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-22T18:46:13.143Z"
+      },
+      {
+        "blockNumber": 12,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-22T21:27:30.776Z"
+      },
+      {
+        "blockNumber": 2,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-23T15:30:24.159Z"
+      }
+    ]
   },
   {
     "username": "rob",
@@ -14,6 +51,28 @@
     "isPrepared": false,
     "inGame": false,
     "answers": [],
-    "moves": 0
+    "moves": 1,
+    "history": [
+      {
+        "blockNumber": 7,
+        "category": "С (транспорт и строения)",
+        "timestamp": "2024-09-22T15:10:19.713Z"
+      }
+    ],
+    "points": 26
+  },
+  {
+    "username": "moder",
+    "role": "admin",
+    "isPrepared": false,
+    "inGame": false,
+    "answers": []
+  },
+  {
+    "username": "test",
+    "role": "user",
+    "isPrepared": false,
+    "inGame": false,
+    "answers": []
   }
 ]

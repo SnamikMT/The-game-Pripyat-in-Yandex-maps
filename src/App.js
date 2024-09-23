@@ -16,6 +16,7 @@ import Progress from "./components/Progress";
 import Game from "./components/Game";
 import AddQuestion from "./components/AddQuestion";
 import MoveHistory from './components/MoveHistory';
+import { GameProvider } from './components/GameContext';
 
 const socket = io("http://localhost:5000");
 
@@ -237,58 +238,61 @@ const App = () => {
             setGameStarted={setGameStarted}
             setGameEnded={setGameEnded}
             setRemainingTime={setRemainingTime}
+            setQuestions={setQuestions}  // Добавьте эту строку
             socket={socket}
             onPrepare={handlePrepare}
-            setQuestions={setQuestions}
             remainingTime={remainingTime}
           />
+
           <div className="App">
-            <Routes>
-            // Измените строку в App.js
-              <Route path="/categories" element={<Categories team={team} />} />
-              <Route path="/options" element={<TeamOptions />} />
-              <Route
-                path="/questions"
-                element={<Questions team={team} gameStarted={gameStarted} questions={questions} />}
-              />
-              <Route path="/results" element={<Results />} />
-              <Route path="/maps" element={<Maps />} />
-              <Route
-                path="/game"
-                element={
-                  <Game
-                    team={team}
-                    gameStarted={gameStarted}
-                    remainingTime={remainingTime}
-                    formatTime={formatTime}
-                    socket={socket}
-                    onJoinGame={handleJoinGame}
-                  />
-                }
-              />
-              {team?.role === "admin" && (
-                <>
-                  <Route path="/add-team" element={<AddTeam />} />
-                  <Route path="/manage-teams" element={<ManageTeams />} />
-                  <Route path="/progress" element={<Progress teamsData={teamsData} />} />
-                  <Route path="/move-history" element={<MoveHistory />} />
-                  <Route
-                    path="/statistics"
-                    element={
-                      <AdminStatistics
-                        gameEnded={gameEnded}
-                        remainingTime={remainingTime}
-                        formatTime={formatTime}
-                        teamsData={teamsData}
-                        answersData={answersData}
-                      />
-                    }
-                  />
-                  <Route path="/add-question" element={<AddQuestion />} />
-                </>
-              )}
-              <Route path="*" element={<Navigate to="/game" />} />
-            </Routes>
+            <GameProvider>
+              <Routes>
+                <Route path="/categories" element={<Categories team={team} />} />
+                <Route path="/options" element={<TeamOptions />} />
+                <Route
+                  path="/questions"
+                  element={<Questions team={team} gameStarted={gameStarted} questions={questions} />}
+                />
+                <Route path="/results" element={<Results />} />
+                <Route path="/maps" element={<Maps />} />
+                <Route
+                  path="/game"
+                  element={
+                    <Game
+                      team={team}
+                      gameStarted={gameStarted}
+                      remainingTime={remainingTime}
+                      formatTime={formatTime}
+                      socket={socket}
+                      onJoinGame={handleJoinGame}
+                    />
+                  }
+                />
+                <Route
+                  path="/statistics"
+                  element={
+                    <AdminStatistics
+                      gameEnded={gameEnded}
+                      remainingTime={remainingTime}
+                      formatTime={formatTime}
+                      teamsData={teamsData}
+                      answersData={answersData}
+                      team={team}
+                    />
+                  }
+                />
+                {team?.role === "admin" && (
+                  <>
+                    <Route path="/add-team" element={<AddTeam />} />
+                    <Route path="/manage-teams" element={<ManageTeams />} />
+                    <Route path="/progress" element={<Progress teamsData={teamsData} />} />
+                    <Route path="/move-history" element={<MoveHistory />} />
+                    <Route path="/add-question" element={<AddQuestion />} />
+                  </>
+                )}
+                <Route path="*" element={<Navigate to="/game" />} />
+              </Routes>
+            </GameProvider>
           </div>
         </>
       ) : (

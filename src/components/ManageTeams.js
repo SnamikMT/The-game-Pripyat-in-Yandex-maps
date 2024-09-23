@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
+import AddUser from "./AddUser"; 
+import '../style/ManageTeams.css';  // Подключаем стили
 
 const socket = io("http://localhost:5000");
 
 const ManageTeams = () => {
   const [teams, setTeams] = useState([]);
   const [error, setError] = useState("");
+  const [viewHidden, setViewHidden] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editMode, setEditMode] = useState(null); // Состояние редактирования
+  const [editData, setEditData] = useState({ username: "", password: "" }); // Данные для редактирования
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -14,7 +20,7 @@ const ManageTeams = () => {
         const data = await response.json();
         setTeams(data);
       } catch (error) {
-        setError("Error fetching teams");
+        setError("Ошибка при загрузке пользователей");
       }
     };
 
@@ -52,26 +58,127 @@ const ManageTeams = () => {
       });
 
       if (response.ok) {
-        socket.emit("deleteUser", username); // Уведомляем сервер о удалении
+        socket.emit("deleteUser", username); 
       } else {
-        setError("Error deleting user");
+        setError("Ошибка при удалении пользователя");
       }
     } catch (error) {
-      setError("Error deleting user");
+      setError("Ошибка при удалении пользователя");
     }
   };
 
+  const handleEdit = (team) => {
+    setEditMode(team.username);
+    setEditData({ username: team.username, password: "" });
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${editData.username}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: editData.username, password: editData.password }),
+      });
+
+      if (response.ok) {
+        socket.emit("updateUser", editData); 
+        setEditMode(null); // Выйти из режима редактирования
+      } else {
+        setError("Ошибка при обновлении пользователя");
+      }
+    } catch (error) {
+      setError("Ошибка при обновлении пользователя");
+    }
+  };
+
+  const filteredTeams = teams
+    .filter((team) => team.isHidden === viewHidden)
+    .filter((team) =>
+      team.username.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
   return (
-    <div>
-      <h2>Manage Teams</h2>
+    <div className="manage-teams-container">
+      <h2 className="comand">Управление командами</h2>
       {error && <p>{error}</p>}
-      <ul>
-        {teams.map((team) => (
-          <li key={team.username}>
-            {team.username} - {team.role} 
-            <button onClick={() => handleDelete(team.username)}>Delete</button>
-          </li>
-        ))}
+
+      <AddUser />
+
+      <div className="buttons-container">
+        <button 
+          onClick={() => setViewHidden(false)} 
+          className={`toggle-button ${!viewHidden ? "active" : ""}`}
+        >
+          Активные
+        </button>
+        <button 
+          onClick={() => setViewHidden(true)} 
+          className={`toggle-button ${viewHidden ? "active" : ""}`}
+        >
+          Скрытые
+        </button>
+      </div>
+
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Поиск по имени пользователя"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-input"
+        />
+      </div>
+
+      <ul className="teams-list">
+        {filteredTeams.length === 0 ? (
+          <p>Нет пользователей в этом разделе.</p>
+        ) : (
+          filteredTeams.map((team) => (
+            <li key={team.username} className="team-item">
+              {editMode === team.username ? (
+                <div className="edit-container">
+                  <input
+                    type="text"
+                    value={editData.username}
+                    onChange={(e) =>
+                      setEditData({ ...editData, username: e.target.value })
+                    }
+                    placeholder="Новый логин"
+                  />
+                  <input
+                    type="password"
+                    value={editData.password}
+                    onChange={(e) =>
+                      setEditData({ ...editData, password: e.target.value })
+                    }
+                    placeholder="Новый пароль"
+                  />
+                  <button className="save-button" onClick={handleSaveEdit}>
+                    Сохранить
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {team.username} - {team.role}
+                  <button
+                    className="edit-button"
+                    onClick={() => handleEdit(team)}
+                  >
+                    Изменить
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete(team.username)}
+                  >
+                    Удалить
+                  </button>
+                </>
+              )}
+            </li>
+          ))
+        )}
       </ul>
     </div>
   );

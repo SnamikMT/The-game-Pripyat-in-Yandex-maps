@@ -22,8 +22,12 @@ const Login = ({ onLogin }) => {
         onLogin(response.data);  // Передаем данные пользователя в App.js для изменения состояния
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError("Invalid username or password");
+      console.error("Login error:", err.response);
+      if (err.response.status === 403) {
+        setError("Ваш аккаунт скрыт. Пожалуйста, обратитесь к администратору.");
+      } else {
+        setError("Неверные имя пользователя или пароль");
+      }
     }
   };  
 

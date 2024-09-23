@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const MoveHistory = () => {
   const [teamMoves, setTeamMoves] = useState([]);
+  const [blocks, setBlocks] = useState([]);
 
   useEffect(() => {
     const fetchTeamMoves = async () => {
@@ -14,40 +15,75 @@ const MoveHistory = () => {
       }
     };
 
+    const fetchBlocks = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/blocks'); // Получаем данные блоков
+        setBlocks(response.data);
+      } catch (error) {
+        console.error('Error fetching blocks:', error);
+      }
+    };
+
     fetchTeamMoves();
+    fetchBlocks();
   }, []);
+
+  const getBlockByNumberAndCategory = (blockNumber, category) => {
+    if (!category) {
+      return null; // Если категория не определена, возвращаем null
+    }
+  
+    const categoryBlocks = blocks.find(blockCategory => blockCategory.category && blockCategory.category.toLowerCase() === category.toLowerCase());
+  
+    if (categoryBlocks) {
+      const block = categoryBlocks.blocks.find(b => b.number === blockNumber);
+      return block || null;
+    }
+  
+    console.log("Категория не найдена");
+    return null; // Если блок или категория не найдены
+  };
+  
 
   return (
     <div className="move-history-container">
       <h2>История ходов</h2>
       {teamMoves.length > 0 ? (
-        <table>
-          <thead>
-            <tr>
-              <th>Команда</th>
-              <th>Категория</th>
-              <th>Время запроса</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teamMoves.map((team, index) => (
-              <tr key={index}>
-                <td>{team.name}</td>
-                {team.history && team.history.length > 0 ? (
-                  team.history.map((move, moveIndex) => (
-                    <tr key={moveIndex}>
-                      <td>{team.name}</td>
-                      <td>{move.category}</td>
-                      <td>{new Date(move.timestamp).toLocaleString()}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <td colSpan="3">Нет данных</td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        teamMoves.map((team, index) => (
+          <div key={index} className="team-card">
+            <h3>Команда: {team.username}</h3>
+            <div className="team-history">
+              {team.history && team.history.length > 0 ? (
+                team.history.map((move, moveIndex) => {
+                  const block = getBlockByNumberAndCategory(move.blockNumber, move.category); // Ищем блок по номеру и категории
+                  return (
+                    <div key={moveIndex} className="move-card">
+                      <h4>Категория: {move.category}</h4>
+                      <p>Номер блока: {move.blockNumber}</p>
+                      <p>Время запроса: {new Date(move.timestamp).toLocaleString()}</p>
+                      <div className="block-preview">
+                        {block ? (
+                          <>
+                            <p>Предпросмотр блока: {block.title}</p>
+                            {block.imageUrl ? (
+                              <img src={`http://localhost:5000${block.imageUrl}`} alt={block.title} style={{ width: '100px' }} />
+                            ) : (
+                              <p>Изображение отсутствует</p>
+                            )}
+                          </>
+                        ) : (
+                          <p>Блок не найден</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p>Нет данных о ходах для этой команды</p>
+              )}
+            </div>
+          </div>
+        ))
       ) : (
         <p>Данных нет</p>
       )}

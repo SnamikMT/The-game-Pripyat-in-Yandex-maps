@@ -1,67 +1,76 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios'; 
+import axios from 'axios';
+import { useGameContext } from './GameContext';
 
 const formatTime = (timeInSeconds) => {
+  if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = timeInSeconds % 60;
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 };
 
-const Game = ({ team, gameStarted, remainingTime, socket }) => {
-  const [joined, setJoined] = useState(false);
-  const [questions, setQuestions] = useState([]);
+const Game = ({ team, socket }) => {
+  const { gameData, setGameData } = useGameContext();
+  const { questions, gameStarted, timeLeft, submitted } = gameData;
+  const [joined, setJoined] = useState(() => {
+    const savedJoined = localStorage.getItem('joined');
+    return savedJoined === 'true';
+  });
   const [answers, setAnswers] = useState({});
   const [activeTeams, setActiveTeams] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(remainingTime);
 
   useEffect(() => {
-    const loadQuestions = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/questions');
-        const loadedQuestions = response.data.questions || [];
-        setQuestions(loadedQuestions);
-      } catch (error) {
-        console.error('Ошибка загрузки вопросов:', error);
+    socket.on('game_started', (gameData) => {
+      setGameData((prevData) => ({
+        ...prevData,
+        gameStarted: true,
+        questions: gameData.questions,
+        timeLeft: gameData.timeLeft,
+      }));
+      console.log('Game started with time:', gameData.timeLeft);
+    });
+
+    socket.on('timer_update', ({ minutes, seconds }) => {
+      const totalTimeInSeconds = minutes * 60 + seconds;
+      console.log('Received time from server:', totalTimeInSeconds);
+      setGameData((prevData) => ({ ...prevData, timeLeft: totalTimeInSeconds }));
+      if (totalTimeInSeconds <= 0) {
+        alert('Время истекло!');
+        setGameData((prevData) => ({ ...prevData, timeLeft: 0 }));
       }
-    };
-
-    loadQuestions();
-
-    if (team && !joined) {
-      socket.emit('join_game', team);
-      setJoined(true);
-    }
+    });
 
     socket.on('update_teams', (teams) => {
       setActiveTeams(teams);
     });
 
-    socket.on('timer_update', (newTime) => {
-      setTimeLeft(newTime);
-    });
-
     return () => {
-      socket.off('update_teams');
+      socket.off('game_started');
       socket.off('timer_update');
+      socket.off('update_teams');
     };
-  }, [joined, team, socket]);
-
-  const handleAnswerChange = (index, value) => {
-    setAnswers((prevAnswers) => ({
-      ...prevAnswers,
-      [index]: value,
-    }));
-  };
-
-  const handleSubmit = () => {
-    socket.emit('submit_answers', { team, answers });
-  };
+  }, [socket, setGameData]);
 
   const handleJoinGame = () => {
     if (team && !joined) {
       socket.emit('join_game', team);
       setJoined(true);
+      localStorage.setItem('joined', 'true');
     }
+  };
+
+  const handleAnswerChange = (index, value) => {
+    if (!submitted) {
+      setAnswers((prevAnswers) => ({
+        ...prevAnswers,
+        [index]: value,
+      }));
+    }
+  };
+
+  const handleSubmit = () => {
+    socket.emit('submit_answers', { team, answers });
+    setGameData((prevData) => ({ ...prevData, submitted: true }));
   };
 
   if (!joined) {
@@ -74,7 +83,11 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
   }
 
   if (!gameStarted) {
-    return <div>Ожидание старта игры...</div>;
+    return (
+      <div className="waiting-container">
+        <h2 className="waiting-message">Ожидание старта игры...</h2>
+      </div>
+    );
   }
 
   return (
@@ -91,6 +104,7 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
       <div className="timer">
         Оставшееся время: {formatTime(timeLeft)}
       </div>
+
       <div className="questions-container">
         {questions.length ? (
           questions.map((question, index) => (
@@ -102,6 +116,7 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
                 value={answers[index] || ''}
                 onChange={(e) => handleAnswerChange(index, e.target.value)}
                 placeholder="Ваш ответ"
+                disabled={submitted}
               />
             </div>
           ))
@@ -109,7 +124,14 @@ const Game = ({ team, gameStarted, remainingTime, socket }) => {
           <div>Ожидание вопросов...</div>
         )}
       </div>
-      <button onClick={handleSubmit}>Отправить ответы</button>
+
+      <button onClick={handleSubmit} disabled={submitted}>Отправить ответы</button>
+
+      {submitted && (
+        <div className="submission-message">
+          Ваши ответы успешно отправлены!
+        </div>
+      )}
     </div>
   );
 };
