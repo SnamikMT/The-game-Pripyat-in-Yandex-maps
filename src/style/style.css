@@ -1,87 +1,142 @@
 /* styles.css */
-.header-container {
+/* Стили для шапки */
+.header {
+  background-color: #333; /* Темный цвет шапки */
+  color: white; /* Цвет текста */
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 15px;
-  background-color: #fff;
-  border-bottom: 2px solid #ddd;
+  padding: 10px 20px;
+  position: relative;
 }
 
-.left-timer {
-  font-size: 1.2em;
-  font-weight: bold;
-  color: #333;
+.logo {
+  font-size: 1.5em;
+  margin-right: auto;
 }
 
-nav ul {
-  list-style-type: none;
+/* Стили для бургер-меню и навигации */
+.burger-menu {
+  cursor: pointer;
+  display: none; /* Скрыть бургер-меню по умолчанию */
+}
+
+.burger-icon {
+  width: 30px;
+  height: 20px;
   display: flex;
-  gap: 15px;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.burger-icon div {
+  height: 4px;
+  background-color: white;
+  transition: 0.3s;
+}
+
+.burger-icon.open div:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.burger-icon.open div:nth-child(2) {
+  opacity: 0;
+}
+
+.burger-icon.open div:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+.burger-nav {
+  display: none; /* Скрыть бургер-меню по умолчанию */
+}
+
+.burger-nav.open {
+  display: block; /* Отображать бургер-меню, когда оно открыто */
+  position: absolute;
+  top: 50px; /* Задайте значение, чтобы разместить меню под заголовком */
+  left: 0;
+  background-color: #333;
+  width: 100%;
+  z-index: 999;
+}
+
+.burger-nav ul {
+  list-style: none;
   padding: 0;
-  margin: 0;
 }
 
-nav ul li {
-  display: inline;
+.burger-nav ul li {
+  padding: 10px;
+  text-align: center;
 }
 
-nav ul li a {
+.burger-nav ul li a {
+  color: white;
   text-decoration: none;
-  color: #007BFF;
+}
+
+/* Стиль для десктопного меню */
+.nav-desktop {
+  display: flex; /* Отображать стандартное меню на десктопе */
+  flex-direction: row; /* Горизонтальное расположение */
+  list-style: none; /* Убрать маркеры */
+}
+
+.nav-desktop ul {
+  display: flex; /* Горизонтальное расположение элементов */
+  margin: 0;
+  padding: 0;
+}
+
+.nav-desktop li {
+  margin-right: 20px; /* Отступ между элементами меню */
 }
 
 .right-user {
-  font-size: 1.1em;
-  font-weight: bold;
-  color: #333;
+  margin-left: auto;
 }
 
 .admin-actions {
-  margin-left: 20px;
-}
-
-.action-button {
-  background-color: #007BFF;
-  color: #fff;
-  padding: 8px 12px;
-  border: none;
-  cursor: pointer;
-  border-radius: 4px;
-  margin-top: 10px;
-  transition: background-color 0.3s ease;
-}
-
-.action-button:hover {
-  background-color: #0056b3;
+  position: relative;
 }
 
 .dropdown-actions {
-  display: flex;
-  flex-direction: column;
-  margin-top: 10px;
+  position: absolute;
+  top: 30px; /* Отступ для размещения под кнопкой */
+  right: 0;
+  background-color: #333;
+  padding: 10px;
+  border-radius: 5px;
 }
 
-.dropdown-actions input {
-  margin: 5px 0;
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.error-message {
+  color: red;
+  margin-top: 5px;
 }
 
+/* Скрыть бургер-меню на десктопе */
+@media (min-width: 768px) {
+  .burger-menu {
+    display: none;
+  }
+
+  .burger-nav {
+    display: none; /* Скрыть бургер-меню на десктопе */
+  }
+
+  .nav-desktop {
+    display: flex; /* Отображать стандартное меню на десктопе */
+  }
+}
+
+/* Показать бургер-меню на мобильных устройствах */
 @media (max-width: 768px) {
-  .header-container {
-    flex-direction: column;
-    align-items: flex-start;
+  .nav-desktop {
+    display: none; /* Скрыть стандартное меню на мобильных устройствах */
   }
 
-  .left-timer, .right-user, .admin-actions {
-    margin-top: 10px;
-  }
-
-  nav ul {
-    flex-direction: column;
-    gap: 10px;
+  .burger-menu {
+    display: block; /* Показать бургер-меню на мобильных устройствах */
   }
 }
 
@@ -483,4 +538,128 @@ h2, h3 {
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+}
+
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .left-timer, .right-user, .admin-actions {
+    font-size: 1em;
+    margin-top: 10px;
+    text-align: left;
+  }
+
+  nav ul {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .action-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .dropdown-actions input {
+    width: 100%;
+  }
+
+  .game-container {
+    padding: 20px;
+    max-width: 100%;
+    margin: 10px auto;
+  }
+
+  .question-card, .answer-card {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+
+  .team-cards-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .team-card {
+    width: 100%;
+  }
+
+  .teams-table th, .teams-table td {
+    padding: 10px;
+    font-size: 0.9em;
+  }
+
+  table {
+    font-size: 0.9em;
+  }
+
+  .move-history-container {
+    padding: 15px;
+  }
+
+  .waiting-container {
+    padding: 20px;
+  }
+
+  .waiting-message {
+    font-size: 1.5rem;
+  }
+
+  .manage-teams {
+    padding: 15px;
+  }
+
+  .manage-teams li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .manage-teams button {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    padding: 10px;
+  }
+
+  .left-timer, .right-user {
+    font-size: 0.9em;
+  }
+
+  .action-button {
+    padding: 6px 10px;
+    font-size: 0.9em;
+  }
+
+  .dropdown-actions {
+    padding: 10px;
+  }
+
+  .game-container {
+    padding: 15px;
+  }
+
+  .team-card {
+    padding: 15px;
+  }
+
+  .move-history-container {
+    padding: 10px;
+  }
+
+  .manage-teams {
+    padding: 10px;
+  }
+
+  .waiting-message {
+    font-size: 1.2rem;
+  }
 }

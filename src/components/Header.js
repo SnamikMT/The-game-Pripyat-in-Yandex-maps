@@ -27,6 +27,7 @@ const Header = ({
   const [minScore, setMinScore] = useState(0);
   const [maxScore, setMaxScore] = useState(10);
   const [errorMessage, setErrorMessage] = useState('');
+  const [burgerMenuOpen, setBurgerMenuOpen] = useState(false); // состояние для бургер-меню
 
   const navigate = useNavigate();
 
@@ -142,11 +143,26 @@ const Header = ({
     }
   };
 
+  const toggleBurgerMenu = () => {
+    setBurgerMenuOpen(!burgerMenuOpen);
+  };
+
   return (
     <header className="header-container">
       <span className="timer-text">Time left: {formatTime(remainingTime)}</span>
       {errorMessage && <p className="error-message">{errorMessage}</p>}
-      <nav>
+
+      {/* Бургер-меню для мобильной версии */}
+      <div className="burger-menu" onClick={toggleBurgerMenu}>
+        <div className={`burger-icon ${burgerMenuOpen ? 'open' : ''}`}>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+
+      {/* Стандартное меню для десктопа */}
+      <nav className={`nav-desktop ${burgerMenuOpen ? 'open' : ''}`}>
         <ul>
           <li><Link to="/categories">Categories</Link></li>
           <li><Link to="/game">Game</Link></li>
@@ -160,6 +176,23 @@ const Header = ({
           <li><button onClick={onLogout}>Logout</button></li>
         </ul>
       </nav>
+
+      {/* Бургер-меню для мобильной версии */}
+      <nav className={`burger-nav ${burgerMenuOpen ? 'open' : ''}`}>
+        <ul>
+          <li><Link to="/categories">Categories</Link></li>
+          <li><Link to="/game">Game</Link></li>
+          <li><Link to="/statistics">Statistics</Link></li>
+          {team.role === 'admin' && (
+            <>
+              <li><Link to="/manage-teams">Manage Teams</Link></li>
+              <li><button onClick={handleMoveHistory}>История ходов</button></li>
+            </>
+          )}
+          <li><button onClick={onLogout}>Logout</button></li>
+        </ul>
+      </nav>
+
       <div className="right-user">
         <span>{team?.username}</span>
       </div>
