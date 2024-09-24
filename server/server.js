@@ -606,7 +606,6 @@ app.post('/api/join-game', (req, res) => {
   }
 });
 
-
 // Эндпоинт для обновления ходов
 app.post('/api/update-moves', async (req, res) => {
   const { teamName } = req.body; // Получите имя команды из запроса
@@ -638,15 +637,23 @@ app.post('/api/answers', (req, res) => {
       existingAnswers = []; // В случае ошибки парсинга также инициализируем пустой массив
     }
 
+    console.log('Received answer from team:', team, 'Answers:', answers);
+
+
     // Проверяем, есть ли уже ответы от этой команды
     const existingTeamIndex = existingAnswers.findIndex(item => item.team === team);
 
+    const submittedAt = new Date().toISOString();
+
+    console.log('Submitted at:', submittedAt); // Лог для проверки
+
     if (existingTeamIndex >= 0) {
-      // Обновляем ответы существующей команды
+      // Обновляем
       existingAnswers[existingTeamIndex].answers = answers;
+      existingAnswers[existingTeamIndex].submittedAt = submittedAt;
     } else {
-      // Добавляем новые ответы
-      existingAnswers.push({ team, answers });
+      // Добавляем
+      existingAnswers.push({ team, answers, submittedAt });
     }
 
     // Записываем обновленные ответы обратно в файл
@@ -658,7 +665,6 @@ app.post('/api/answers', (req, res) => {
     });
   });
 });
-
 
 
 // Route to get answers data
@@ -880,6 +886,28 @@ app.post('/api/teams/admin/scores', async (req, res) => {
   }
 });
 
+// Обработчик POST-запроса для обновления награды команды
+app.post('/api/teams/update-reward', (req, res) => {
+  const { team, reward } = req.body;
+
+  // Предположим, что данные команд хранятся в файле или базе данных
+  const teams = require('./data/teams.json'); // Загружаем файл с командами
+
+  // Находим команду по имени и обновляем награду
+  const teamIndex = teams.findIndex((t) => t.username === team);
+  if (teamIndex !== -1) {
+    teams[teamIndex].reward = reward;
+
+    // Сохраняем обновленный файл (если используете файл для хранения данных)
+    fs.writeFileSync('./data/teams.json', JSON.stringify(teams, null, 2));
+
+    res.status(200).send({ success: true, teams });
+  } else {
+    res.status(404).send({ error: 'Команда не найдена' });
+  }
+});
+
+
 
 // Функция для сохранения пользователей в файл
 const saveUsers = () => {
@@ -983,20 +1011,23 @@ io.on('connection', (socket) => {
       currentAnswers = currentAnswers ? JSON.parse(currentAnswers) : [];
 
       const existingTeamIndex = currentAnswers.findIndex(item => item.team === team.username);
+      const submittedAt = new Date().toISOString(); // Получаем текущее время
 
       if (existingTeamIndex >= 0) {
         currentAnswers[existingTeamIndex].answers = answers;
+        currentAnswers[existingTeamIndex].submittedAt = submittedAt; // Обновляем время отправки
       } else {
-        currentAnswers.push({ team: team.username, answers });
+        currentAnswers.push({ team: team.username, answers, submittedAt }); // Сохраняем время отправки
       }
 
       await fs.promises.writeFile(answersFilePath, JSON.stringify(currentAnswers, null, 2));
       console.log('Ответы успешно сохранены');
-      io.emit('new_answer', { team: team.username, answers });
+      io.emit('new_answer', { team: team.username, answers, submittedAt }); // Отправляем время отправки
     } catch (err) {
       console.error('Ошибка при обработке ответов:', err);
     }
   });
+
 
   // Старт игры и таймера
   socket.on('start_game', (duration) => {
@@ -1016,6 +1047,10 @@ io.on('connection', (socket) => {
       }
     }, 1000);
   });
+
+  socket.on('force_message', (message) => {
+    io.emit('display_message', message);
+  });  
 
 
   // Завершение игры вручную

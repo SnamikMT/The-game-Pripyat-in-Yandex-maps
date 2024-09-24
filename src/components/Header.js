@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// Function to format time
 const formatTime = (timeInSeconds) => {
   if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = timeInSeconds % 60;
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 };
-
 
 const Header = ({
   team,
@@ -28,6 +26,7 @@ const Header = ({
   const [newQuestion, setNewQuestion] = useState('');
   const [minScore, setMinScore] = useState(0);
   const [maxScore, setMaxScore] = useState(10);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const navigate = useNavigate();
 
@@ -37,6 +36,7 @@ const Header = ({
         const response = await axios.get('http://localhost:5000/api/questions');
         setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
       } catch (error) {
+        setErrorMessage('Ошибка загрузки вопросов');
         console.error('Error loading questions:', error);
       }
     };
@@ -72,6 +72,10 @@ const Header = ({
   };
 
   const handleAddQuestion = async () => {
+    if (!newQuestion) {
+      setErrorMessage('Введите вопрос');
+      return;
+    }
     try {
       const response = await axios.post('http://localhost:5000/api/add-question', {
         question: {
@@ -85,6 +89,7 @@ const Header = ({
       setMinScore(0);
       setMaxScore(10);
     } catch (error) {
+      setErrorMessage('Ошибка добавления вопроса');
       console.error('Error adding question:', error);
     }
   };
@@ -94,32 +99,36 @@ const Header = ({
       const response = await axios.post('http://localhost:5000/api/delete-question', { index });
       setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
     } catch (error) {
+      setErrorMessage('Ошибка удаления вопроса');
       console.error('Error deleting question:', error);
     }
   };
 
   const handleStartGame = async () => {
     try {
+      if (gameDuration <= 0) {
+        setErrorMessage('Длительность игры должна быть больше 0');
+        return;
+      }
       await axios.post('http://localhost:5000/api/clear-answers');
       const response = await axios.post('http://localhost:5000/api/start-game', {
-        duration: gameDuration * 60, // Передаем в секундах
+        duration: gameDuration * 60,
       });
-  
-      socket.emit('start_game', gameDuration * 60); // Уведомляем сервер о старте игры с длительностью в секундах
-  
+
+      socket.emit('start_game', gameDuration * 60);
       const serverQuestions = response.data.questions;
       if (serverQuestions && serverQuestions.length > 0) {
         setLocalQuestions(serverQuestions);
         setQuestions(serverQuestions);
       }
-  
+
       setGameStarted(true);
-      setRemainingTime(gameDuration * 60); // Устанавливаем оставшееся время на клиенте
+      setRemainingTime(gameDuration * 60);
     } catch (error) {
+      setErrorMessage('Ошибка запуска игры');
       console.error('Error starting game:', error);
     }
-  };  
-  
+  };
 
   const handleEndGame = async () => {
     try {
@@ -128,24 +137,15 @@ const Header = ({
       setGameStarted(false);
       socket.emit('game_ended');
     } catch (error) {
+      setErrorMessage('Ошибка завершения игры');
       console.error('Error ending game:', error);
     }
   };
 
-  const handleSendForceMessage = () => {
-    const message = {
-      time: '11:55',
-      text: 'На улице к вам подошел мужчина средних лет, представился другом и произнес: Меня просили передать, что ищут с вами встречи, есть тут у нас один чудик, в свое время работал на "Юпитере", он-то вас и ждет, говорит, у него для вас интересная информация.',
-    };
-  
-    socket.emit('force_message', message);
-  };
-  
-
   return (
     <header className="header-container">
-    <span className="timer-text">Time left: {formatTime(remainingTime)}</span>
-
+      <span className="timer-text">Time left: {formatTime(remainingTime)}</span>
+      {errorMessage && <p className="error-message">{errorMessage}</p>}
       <nav>
         <ul>
           <li><Link to="/categories">Categories</Link></li>
@@ -160,29 +160,20 @@ const Header = ({
           <li><button onClick={onLogout}>Logout</button></li>
         </ul>
       </nav>
-
       <div className="right-user">
         <span>{team?.username}</span>
       </div>
-
       {team.role === 'admin' && (
         <div className="admin-actions">
           <button onClick={toggleActions} className="action-button">Actions</button>
           {showActions && (
             <div className="dropdown-actions">
-
-          <h3>Send Force Message</h3>
-            <button onClick={handleSendForceMessage} className="action-button">
-              Send Force Message to All Players
-            </button>
-
               <label>Game Duration (min):</label>
               <input
                 type="number"
                 value={gameDuration}
                 onChange={(e) => setGameDuration(Number(e.target.value))}
               />
-
               <h3>Create Questions</h3>
               <label>Question:</label>
               <input
@@ -206,7 +197,6 @@ const Header = ({
                 placeholder="Max score"
               />
               <button onClick={handleAddQuestion} className="action-button">Add Question</button>
-
               <div>
                 <h4>Question List:</h4>
                 <ul>
@@ -222,7 +212,6 @@ const Header = ({
                   )}
                 </ul>
               </div>
-
               <button onClick={handleStartGame} className="action-button">Start Game</button>
               <button onClick={handleEndGame} className="action-button">End Game</button>
             </div>

@@ -93,6 +93,27 @@ const ManageTeams = () => {
     }
   };
 
+  const handleToggleVisibility = async (team) => {
+    const updatedUser = { ...team, isHidden: !team.isHidden };
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${team.username}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedUser),
+      });
+
+      if (response.ok) {
+        socket.emit("updateUser", updatedUser);
+      } else {
+        setError("Ошибка при обновлении статуса пользователя");
+      }
+    } catch (error) {
+      setError("Ошибка при обновлении статуса пользователя");
+    }
+  };
+
   const filteredTeams = teams
     .filter((team) => team.isHidden === viewHidden)
     .filter((team) =>
@@ -167,6 +188,12 @@ const ManageTeams = () => {
                     onClick={() => handleEdit(team)}
                   >
                     Изменить
+                  </button>
+                  <button
+                    className="toggle-button"
+                    onClick={() => handleToggleVisibility(team)}
+                  >
+                    {team.isHidden ? "Сделать активным" : "Скрыть"}
                   </button>
                   <button
                     className="delete-button"

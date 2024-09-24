@@ -1,0 +1,68 @@
+/* AdminStatistics.css */
+
+.admin-statistics {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-color: #f8f9fa; /* Light background */
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  h2, h3 {
+    margin: 10px 0;
+    text-align: center;
+  }
+  
+  .teams-table {
+    width: 100%;
+    max-width: 800px; /* Limit table width */
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .teams-table th, .teams-table td {
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .answers-container {
+    width: 100%;
+    max-width: 800px; /* Limit container width */
+    background-color: #ffffff; /* White background for answers */
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .answer-card {
+    border: 1px solid #007bff; /* Blue border */
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #e9ecef; /* Light gray background for answer cards */
+  }
+  
+  .score-input {
+    display: flex;
+    align-items: center;
+    margin-top: 5px;
+  }
+  
+  button {
+    background-color: #007bff; /* Bootstrap primary color */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+  }
+  

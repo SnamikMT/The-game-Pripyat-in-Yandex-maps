@@ -1,32 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
+import '../style/AdminStatistics.css';
 
-const socket = io('http://localhost:5000'); // Убедитесь, что это правильный адрес вашего сервера
+const socket = io('http://localhost:5000');
 
 const AdminStatistics = ({ team }) => {
   const [teamsData, setTeamsData] = useState([]);
   const [answersData, setAnswersData] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [scores, setScores] = useState({});
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Проверяем, является ли пользователь администратором
   const isAdmin = team?.role === 'admin';
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Загрузка команд
         const teamsResponse = await axios.get('http://localhost:5000/api/teams');
         if (Array.isArray(teamsResponse.data)) {
           setTeamsData(teamsResponse.data);
         }
 
-        // Загрузка ответов
         const answersResponse = await axios.get('http://localhost:5000/api/answers');
         setAnswersData(answersResponse.data || []);
 
-        // Загрузка вопросов
         const questionsResponse = await axios.get('http://localhost:5000/api/questions');
         if (Array.isArray(questionsResponse.data)) {
           setQuestions(questionsResponse.data);
@@ -34,25 +32,25 @@ const AdminStatistics = ({ team }) => {
           setQuestions(questionsResponse.data.questions);
         }
       } catch (error) {
+        setErrorMessage('Ошибка загрузки данных');
         console.error('Ошибка загрузки данных:', error);
       }
     };
 
     fetchData();
 
-    // Обработка новых ответов от сокетов
     socket.on('new_answer', (newAnswer) => {
       setAnswersData((prevAnswers) => [...prevAnswers, newAnswer]);
     });
 
     return () => {
-      socket.off('new_answer');
+      socket.off('new_answer'); 
     };
   }, []);
 
   useEffect(() => {
     const handleNewTeam = (newTeam) => {
-      setTeamsData(prevTeams => [...prevTeams, newTeam]);
+      setTeamsData((prevTeams) => [...prevTeams, newTeam]);
     };
 
     socket.on('team_joined', handleNewTeam);
@@ -62,20 +60,18 @@ const AdminStatistics = ({ team }) => {
     };
   }, []);
 
-  // Обработка изменения очков
   const handleScoreChange = (team, questionIndex, event) => {
     const { value } = event.target;
-    setScores(prevScores => ({
+    setScores((prevScores) => ({
       ...prevScores,
       [`${team}-${questionIndex}`]: Number(value),
     }));
   };
 
-  // Сохранение очков для команды
   const handleSaveScores = async (team) => {
     const teamScores = Object.keys(scores)
-      .filter(key => key.startsWith(team))
-      .map(key => {
+      .filter((key) => key.startsWith(team))
+      .map((key) => {
         const [_, questionIndex] = key.split('-');
         return { questionIndex: Number(questionIndex), score: scores[key] };
       });
@@ -91,13 +87,45 @@ const AdminStatistics = ({ team }) => {
         setTeamsData(response.data.teams);
       }
     } catch (error) {
-      console.error('Error saving scores:', error.response?.data || error.message);
+      setErrorMessage('Ошибка сохранения баллов');
+      console.error('Ошибка сохранения баллов:', error.response?.data || error.message);
+    }
+  };
+
+  const calculateRewards = async () => {
+    const updatedTeams = teamsData.map((team) => {
+      const moves = team.moves || 1;
+      const points = team.points || 0;
+      const reward = points / moves;
+  
+      return { ...team, reward: reward };
+    });
+  
+    // Обновляем состояние с новыми наградами
+    setTeamsData(updatedTeams);
+  
+    try {
+      // Отправляем обновленные данные на сервер для сохранения
+      await Promise.all(updatedTeams.map(async (team) => {
+        const response = await axios.post('http://localhost:5000/api/teams/update-reward', {
+          team: team.username,
+          reward: team.reward, // Отправляем новую награду
+        });
+        console.log(`Награда для команды ${team.username} успешно обновлена:`, response.data);
+      }));
+    } catch (error) {
+      console.error('Ошибка при обновлении наград:', error);
     }
   };
 
   return (
     <div className="admin-statistics">
       <h2>Admin Statistics</h2>
+      {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+      {isAdmin && (
+        <button onClick={calculateRewards} className="action-button">Рассчитать Награды</button>
+      )}
 
       <h3>Teams Statistics</h3>
       <table className="teams-table">
@@ -115,13 +143,12 @@ const AdminStatistics = ({ team }) => {
               <td>{team.username}</td>
               <td>{team.moves}</td>
               <td>{team.points}</td>
-              <td>{team.reward}</td>
+              <td>{team.reward ? team.reward.toFixed(2) : '0.00'}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Этот блок виден только админу */}
       {isAdmin && (
         <>
           <h3>Teams' Answers</h3>
@@ -130,18 +157,22 @@ const AdminStatistics = ({ team }) => {
               answersData.map((answer, index) => (
                 <div key={`answer-${index}`} className="answer-card">
                   <h4>{answer.team}</h4>
+                  <p>
+                    <em>Отправлено в: {answer.submittedAt ? new Date(answer.submittedAt).toLocaleString() : 'неизвестно'}</em>
+                  </p>
+
                   <ul>
                     {Object.entries(answer.answers).map(([qIndex, ans]) => {
                       const question = questions[qIndex];
-                      const questionText = question ? question.text : `Question ${qIndex}`;
+                      const questionText = question ? question.text : `Вопрос ${qIndex}`;
                       const minScore = question ? question.minScore : 0;
                       const maxScore = question ? question.maxScore : 10;
 
                       return (
                         <li key={`question-${answer.team}-${qIndex}`}>
-                          <strong>{questionText}:</strong> {ans} (Score range: {minScore} - {maxScore})
+                          <strong>{questionText}:</strong> {ans} (Диапазон баллов: {minScore} - {maxScore})
                           <div className="score-input">
-                            <label htmlFor={`score-${answer.team}-${qIndex}`}>Score:</label>
+                            <label htmlFor={`score-${answer.team}-${qIndex}`}>Балл:</label>
                             <input
                               type="number"
                               id={`score-${answer.team}-${qIndex}`}
@@ -155,11 +186,11 @@ const AdminStatistics = ({ team }) => {
                       );
                     })}
                   </ul>
-                  <button onClick={() => handleSaveScores(answer.team)}>Save Scores</button>
+                  <button onClick={() => handleSaveScores(answer.team)}>Сохранить баллы</button>
                 </div>
               ))
             ) : (
-              <p>No answers available</p>
+              <p>Нет доступных ответов</p>
             )}
           </div>
         </>

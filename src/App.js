@@ -17,6 +17,7 @@ import Game from "./components/Game";
 import AddQuestion from "./components/AddQuestion";
 import MoveHistory from './components/MoveHistory';
 import { GameProvider } from './components/GameContext';
+import MessagePopup from './components/MessagePopup';
 
 const socket = io("http://localhost:5000");
 
@@ -29,6 +30,7 @@ const App = () => {
   const [teamsData, setTeamsData] = useState([]);
   const [answersData, setAnswersData] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [message, setMessage] = useState(null);
 
   // Fetch questions when component mounts
   useEffect(() => {
@@ -135,6 +137,20 @@ const App = () => {
     };
   }, [team?.username]);
 
+  useEffect(() => {
+    socket.on('display_message', (message) => {
+      setMessage(message);
+    });
+
+    return () => {
+      socket.off('display_message');
+    };
+  }, []);
+
+  const closeMessage = () => {
+    setMessage(null);
+  };
+
   // Handle login
   const handleLogin = (credentials) => {
     if (credentials) {
@@ -238,12 +254,12 @@ const App = () => {
             setGameStarted={setGameStarted}
             setGameEnded={setGameEnded}
             setRemainingTime={setRemainingTime}
-            setQuestions={setQuestions}  // Добавьте эту строку
+            setQuestions={setQuestions}
             socket={socket}
             onPrepare={handlePrepare}
             remainingTime={remainingTime}
           />
-
+  
           <div className="App">
             <GameProvider>
               <Routes>
@@ -294,12 +310,14 @@ const App = () => {
               </Routes>
             </GameProvider>
           </div>
+  
+          {message && <MessagePopup message={message} onClose={closeMessage} />}
         </>
       ) : (
         <Login onLogin={handleLogin} />
       )}
     </Router>
-  );
+  );  
 };
 
 export default App;

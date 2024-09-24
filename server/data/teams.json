@@ -6,7 +6,7 @@
     "inGame": false,
     "answers": [],
     "points": 32,
-    "moves": 25,
+    "moves": 26,
     "history": [
       {
         "blockNumber": 3,
@@ -42,8 +42,14 @@
         "blockNumber": 2,
         "category": "Б (предметы)",
         "timestamp": "2024-09-23T15:30:24.159Z"
+      },
+      {
+        "blockNumber": 5,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-24T14:38:53.807Z"
       }
-    ]
+    ],
+    "reward": 1.2307692307692308
   },
   {
     "username": "rob",
@@ -59,20 +65,23 @@
         "timestamp": "2024-09-22T15:10:19.713Z"
       }
     ],
-    "points": 26
+    "points": 26,
+    "reward": 26
   },
   {
     "username": "moder",
     "role": "admin",
     "isPrepared": false,
     "inGame": false,
-    "answers": []
+    "answers": [],
+    "reward": 0
   },
   {
     "username": "test",
     "role": "user",
     "isPrepared": false,
     "inGame": false,
-    "answers": []
+    "answers": [],
+    "reward": 0
   }
 ]
