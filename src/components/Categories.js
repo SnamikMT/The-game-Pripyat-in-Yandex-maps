@@ -65,7 +65,7 @@ const handleSearch = async () => {
       });
       setUpdatedTitle(block.title);
       setUpdatedDescription(block.description);
-      setImagePreview(block.imageUrl ? `${config.BASE_URL}${block.imageUrl}` : "");
+      setImagePreview(block.imageUrl ? `${config.apiBaseUrl}${block.imageUrl}` : "");
       setIsEditing(false);
 
       // Увеличиваем количество ходов и записываем историю
