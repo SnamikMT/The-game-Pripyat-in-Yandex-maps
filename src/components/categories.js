@@ -167,7 +167,7 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     } else {
-      alert('Please select an image');
+      alert('Пожалуйста выберете изображение');
     }
   };
 
@@ -187,13 +187,13 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
     >
       <div style={{ width: '100%', maxWidth: '600px', background: 'rgba(255, 255, 255, 0.8)', padding: '20px', borderRadius: '10px' }}>
         <Typography variant="h4" gutterBottom>
-          Block Interaction
+          Сделать ход
         </Typography>
 
         <Grid container spacing={2} alignItems="center" style={{ marginBottom: "20px" }}>
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth>
-              <InputLabel id="category-select-label">Select Category</InputLabel>
+              <InputLabel id="category-select-label">Выбрать категорию</InputLabel>
               <Select
                 labelId="category-select-label"
                 value={selectedCategory}
@@ -210,7 +210,7 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
 
           <Grid item xs={12} sm={6}>
             <TextField
-              label="Enter Block Number"
+              label="Введите номер"
               fullWidth
               value={inputValue}
               onChange={handleInputChange}
@@ -219,8 +219,8 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
           </Grid>
 
           <Grid item xs={12} sm={2}>
-            <Button variant="contained" color="primary" fullWidth onClick={handleSearch}>
-              Search
+            <Button className="searchCategory" variant="contained" color="#ffeb99" fullWidth onClick={handleSearch}>
+              Поиск
             </Button>
           </Grid>
         </Grid>
@@ -282,10 +282,10 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
                         fullWidth
                       />
                       <input type="file" accept="image/*" onChange={handleImageChange} />
-                      <Button variant="contained" color="primary" onClick={updateBlock}>Update Block</Button>
+                      <Button variant="contained" color="primary" onClick={updateBlock}>Обновить</Button>
                     </>
                   ) : (
-                    <Button variant="outlined" color="secondary" onClick={() => setIsEditing(true)}>Edit</Button>
+                    <Button variant="outlined" color="secondary" onClick={() => setIsEditing(true)}>Редактировать</Button>
                   )}
                 </>
               )}

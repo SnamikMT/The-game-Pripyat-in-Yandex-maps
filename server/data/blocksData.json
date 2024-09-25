@@ -8,7 +8,9 @@
         "description": "- Здравствуйте. Ничем не могу вам помочь. Я вообще здесь недавно и мало кого знаю…",
         "showDocumentIcon": true,
         "showVoiceMessageIcon": true,
-        "imageUrl": "/uploads/59aff95d66718e0b0d0b09614d04fd2a"
+        "imageUrl": "/uploads/f5be4ad4498b8028e518aead884439c7",
+        "image2Url": "path/to/uploaded/document",
+        "voiceMessageUrl": "path/to/uploaded/voiceMessage"
       },
       {
         "number": 2,
@@ -133,7 +135,9 @@
         "description": "Приподняв металлический лист,\r\nзакрывающий бочку, вы обнаруживаете,\r\nчто это прекрасный тайник для передачи\r\nинформации. Но кроме скомканной пачки\r\nсигарет, ничего там не находите.\r\nГлавная миссия этого объекта – напмнить\r\nвсем о вреде курения!",
         "showDocumentIcon": false,
         "showVoiceMessageIcon": false,
-        "imageUrl": "/uploads/9a5505338881fe86d7709b3160dff1a4"
+        "imageUrl": "/uploads/9a5505338881fe86d7709b3160dff1a4",
+        "documentUrl": "/uploads/document_filename.ext",
+        "voiceMessageUrl": "/uploads/voice_message_filename.ext"
       },
       {
         "number": 5,

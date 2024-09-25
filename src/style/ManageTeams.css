@@ -1,80 +1,89 @@
 .manage-teams-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    text-align: center;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+  background-color: #363636; /* Темный фон */
+  color: white; /* Белый текст */
+}
 
-  .comand{
-    font-size: 36px;
-  }
-  
-  .buttons-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-    margin-top: 60px;
-  }
-  
-  .toggle-button {
-    padding: 10px;
-    margin-right: 10px;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  
-  .toggle-button.active {
-    background-color: #007BFF;
-  }
-  
-  .search-container {
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .search-input {
-    padding: 10px;
-    width: 100%;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-  }
-  
-  .teams-list {
-    list-style-type: none;
-    padding: 0;
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .team-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    margin-bottom: 10px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-  }
-  
-  .delete-button {
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 5px 10px;
-    cursor: pointer;
-  }
-  
-  .delete-button:hover {
-    background-color: #c82333;
-  }
-  
+.manage-teams-container h2, h3{
+    color: white; /* Белый текст */
+}
+
+.comand {
+  font-size: 36px;
+  margin-bottom: 20px; /* Добавлен отступ для лучшего оформления */
+}
+
+.buttons-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  margin-top: 60px;
+}
+
+.toggle-button {
+  padding: 10px;
+  margin-right: 10px;
+  background-color: #ed3f3f; /* Цвет кнопки */
+  color: white; /* Белый текст кнопки */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease; /* Плавный переход цвета */
+}
+
+.toggle-button.active {
+  background-color: #e63946; /* Цвет активной кнопки */
+}
+
+.search-container {
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.search-input {
+  padding: 10px;
+  width: 100%;
+  border-radius: 5px;
+  border: 1px solid #ccc; /* Светлый бордер для поля ввода */
+  font-size: 16px;
+  background-color: #1f1f1f; /* Темный фон для поля ввода */
+  color: white; /* Белый текст */
+}
+
+.teams-list {
+  list-style-type: none;
+  padding: 0;
+  width: 100%;
+  max-width: 400px;
+}
+
+.team-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #1f1f1f; /* Темный фон для элемента списка */
+  border-radius: 5px;
+  border: 1px solid #ddd; /* Светлый бордер */
+}
+
+.delete-button {
+  background-color: #dc3545; /* Красный цвет кнопки удаления */
+  color: white; /* Белый текст */
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background-color: #c82333; /* Более темный красный при наведении */
+}

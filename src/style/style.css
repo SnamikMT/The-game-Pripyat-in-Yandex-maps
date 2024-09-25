@@ -9,6 +9,40 @@
   position: relative;
 }
 
+.his {
+  background-color: #ffeb99;
+  color: #272727;
+}
+
+.his:hover {
+  background-color: #0000ff00;
+}
+
+.timer-text {
+  margin-right: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.logouts {
+  color: #272727;
+  background-color: #0000ff00;
+}
+
+.log{
+  background-color: #ed3f3f;
+  color: #272727;
+}
+
+.log:hover {
+  background-color: #ffffff;
+}
+
+
+.logouts:hover {
+  background-color: #0000ff00;
+}
+
 .logo {
   font-size: 1.5em;
   margin-right: auto;
@@ -90,10 +124,14 @@
 
 .nav-desktop li {
   margin-right: 20px; /* Отступ между элементами меню */
+  display: flex;
+  align-items: center;
 }
 
 .right-user {
   margin-left: auto;
+  display: flex;
+  align-items: center;
 }
 
 .admin-actions {
@@ -138,6 +176,135 @@
   .burger-menu {
     display: block; /* Показать бургер-меню на мобильных устройствах */
   }
+}
+
+.header-container {
+  position: relative;
+  display: flex;
+  padding: 20px;
+  background-color: #272727;
+  color: white;
+}
+
+.floating-action-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.round-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #ffeb99;
+  color: #272727;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.round-button:hover {
+  background-color: #ffffff;
+}
+
+.popup-actions {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+}
+
+.popup-actions h3 {
+  margin-top: 0;
+}
+
+.action-button {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #272727;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.action-button:hover {
+  background-color: #0056b3;
+}
+
+@media (max-width: 768px) {
+  .popup-actions {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .round-button {
+    width: 50px;
+    height: 50px;
+    font-size: 16px;
+  }
+}
+
+.popup-actions {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-height: 80%;
+  background-color: white;
+  padding: 20px;
+  overflow-y: auto; /* Добавляем прокрутку */
+  z-index: 100;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.close-button {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.toggle-list-button {
+  margin-top: 10px;
+  background-color: #ccc;
+  color: black;
+  padding: 5px 10px;
+  cursor: pointer;
+  border: none;
+}
+
+.question-list {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.question-list li {
+  margin-bottom: 10px;
 }
 
 
@@ -245,7 +412,6 @@
 }
 
 button {
-  background-color: #e63946; /* Красный фон для кнопок */
   border: none;
   padding: 10px 20px;
   color: white;
@@ -263,10 +429,17 @@ ul {
 }
 
 ul li {
-  background-color: #444; /* Фон для списка активных команд */
-  padding: 10px;
+  padding: 8px;
   margin-bottom: 5px;
   border-radius: 5px;
+  text-decoration: none;
+  background-color: #ffeb99;
+  color: white;
+}
+
+ul li a{
+  color: #272727;
+  text-decoration: none;
 }
 
 
@@ -425,6 +598,7 @@ table tr:nth-child(even) {
   align-items: center;
   min-height: 100vh; /* Высота экрана */
   text-align: center;
+  background-color: #363636;
 }
 
 .team-card {
@@ -662,4 +836,9 @@ h2, h3 {
   .waiting-message {
     font-size: 1.2rem;
   }
+}
+
+
+.searchCategory {
+  color: #ffeb99;
 }

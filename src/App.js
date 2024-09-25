@@ -147,10 +147,6 @@ const App = () => {
     };
   }, []);
 
-  const closeMessage = () => {
-    setMessage(null);
-  };
-
   // Handle login
   const handleLogin = (credentials) => {
     if (credentials) {
@@ -240,6 +236,10 @@ const App = () => {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
+  const closePopup = () => {
+    setMessage(null);
+  };
+
   return (
     <Router>
       {isAuthenticated ? (
@@ -311,7 +311,7 @@ const App = () => {
             </GameProvider>
           </div>
   
-          {message && <MessagePopup message={message} onClose={closeMessage} />}
+          {message && <MessagePopup message={{ time: "11:55", text: message }} onClose={closePopup} />}
         </>
       ) : (
         <Login onLogin={handleLogin} />

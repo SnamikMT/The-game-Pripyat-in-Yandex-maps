@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { colors } from '@mui/material';
 
 const MoveHistory = () => {
   const [teamMoves, setTeamMoves] = useState([]);
@@ -47,7 +48,7 @@ const MoveHistory = () => {
 
   return (
     <div className="move-history-container">
-      <h2>История ходов</h2>
+      <h2 style={{ color: 'white'}}>История ходов</h2>
       {teamMoves.length > 0 ? (
         teamMoves.map((team, index) => (
           <div key={index} className="team-card">

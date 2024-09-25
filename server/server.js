@@ -74,11 +74,12 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // Указываем папку для хранения файлов
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Уникальное имя файла
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9); // Уникальное имя файла с меткой времени и случайным числом
+    cb(null, uniqueSuffix + path.extname(file.originalname)); // Добавляем расширение файла
   }
 });
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ storage: storage }); // Используем настроенное хранилище
 
 // Статическая папка для доступа к загруженным изображениям
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -386,18 +387,17 @@ app.get('/api/blocks', (req, res) => {
   });
 });
 
-// API для обновления блока
-app.put('/api/blocks/:category/:number', upload.single('image'), (req, res) => {
+app.put('/api/blocks/:category/:number', upload.fields([{ name: 'image' }, { name: 'image2' }, { name: 'voiceMessage' }]), async (req, res) => {
   const { category, number } = req.params;
   const { title, description } = req.body;
-  const image = req.file;
+  const image = req.files['image'] ? req.files['image'][0] : null;
+  const image2 = req.files['image2'] ? req.files['image2'][0] : null;
+  const voiceMessage = req.files['voiceMessage'] ? req.files['voiceMessage'][0] : null;
 
-  fs.readFile('./data/blocks.json', 'utf8', (err, data) => {
-    if (err) {
-      return res.status(500).json({ message: 'Error reading data' });
-    }
-
+  try {
+    const data = await fs.promises.readFile('./data/blocks.json', 'utf8');
     const blocksData = JSON.parse(data);
+
     const categoryData = blocksData.find((cat) => cat.category === category);
     if (!categoryData) {
       return res.status(404).json({ message: 'Category not found' });
@@ -412,28 +412,40 @@ app.put('/api/blocks/:category/:number', upload.single('image'), (req, res) => {
     block.title = title;
     block.description = description;
 
-    // Если загружено новое изображение
+    // Обрабатываем первое изображение
     if (image) {
       const imagePath = path.join('uploads', image.filename + path.extname(image.originalname));
-      fs.rename(image.path, imagePath, (err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Error saving image' });
-        }
+      await fs.promises.rename(image.path, imagePath);
+      block.imageUrl = `${req.protocol}://${req.get('host')}/${imagePath}`;
+    }
 
-        // Обновляем путь к изображению в JSON
-        block.imageUrl = `${req.protocol}://${req.get('host')}/${imagePath}`;
-      });
+    // Обрабатываем второе изображение
+    if (image2) {
+      const image2Path = path.join('uploads', image2.filename + path.extname(image2.originalname));
+      await fs.promises.rename(image2.path, image2Path);
+      block.image2Url = `${req.protocol}://${req.get('host')}/${image2Path}`;
+    }
+
+    // Обрабатываем голосовое сообщение
+    if (voiceMessage) {
+      const voiceMessagePath = path.join('uploads', voiceMessage.filename + path.extname(voiceMessage.originalname));
+      await fs.promises.rename(voiceMessage.path, voiceMessagePath);
+      block.voiceMessageUrl = `${req.protocol}://${req.get('host')}/${voiceMessagePath}`;
     }
 
     // Сохраняем обновленные данные
-    fs.writeFile('./data/blocks.json', JSON.stringify(blocksData, null, 2), (err) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error saving data' });
-      }
+    await fs.promises.writeFile('./data/blocks.json', JSON.stringify(blocksData, null, 2));
 
-      res.json({ message: 'Block successfully updated', imageUrl: block.imageUrl });
+    res.json({ 
+      message: 'Block successfully updated', 
+      imageUrl: block.imageUrl, 
+      image2Url: block.image2Url,
+      voiceMessageUrl: block.voiceMessageUrl 
     });
-  });
+  } catch (err) {
+    console.error('Error processing block update:', err);
+    res.status(500).json({ error: 'Error updating block' });
+  }
 });
 
 
@@ -483,7 +495,6 @@ app.post("/api/login", (req, res) => {
     res.status(200).json({ username: user.username, role: user.role });
   });
 });
-
 
 
 // Подготовка команды к игре
@@ -689,7 +700,6 @@ app.get('/api/questions', async (req, res) => {
     res.status(500).json({ message: 'Ошибка при получении вопросов' });
   }
 });
-
 
 
 // API для добавления вопроса
@@ -906,7 +916,6 @@ app.post('/api/teams/update-reward', (req, res) => {
     res.status(404).send({ error: 'Команда не найдена' });
   }
 });
-
 
 
 // Функция для сохранения пользователей в файл

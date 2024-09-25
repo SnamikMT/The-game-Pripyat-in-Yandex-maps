@@ -6,7 +6,7 @@
     "inGame": false,
     "answers": [],
     "points": 32,
-    "moves": 26,
+    "moves": 65,
     "history": [
       {
         "blockNumber": 3,
@@ -47,6 +47,201 @@
         "blockNumber": 5,
         "category": "Б (предметы)",
         "timestamp": "2024-09-24T14:38:53.807Z"
+      },
+      {
+        "blockNumber": 2,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T09:24:13.673Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T09:35:22.175Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T09:35:32.905Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T09:35:33.066Z"
+      },
+      {
+        "blockNumber": 2,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T09:36:31.785Z"
+      },
+      {
+        "blockNumber": 3,
+        "category": "С (транспорт и строения)",
+        "timestamp": "2024-09-25T10:13:57.533Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T11:00:30.834Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:08:43.406Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:17:45.437Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:18:48.520Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:19:34.382Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:25:08.686Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:39:53.317Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:49:49.330Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:50:37.525Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T11:53:39.530Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T12:10:22.085Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T12:11:24.144Z"
+      },
+      {
+        "blockNumber": 4,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T12:22:51.895Z"
+      },
+      {
+        "blockNumber": 5,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T12:25:09.088Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T12:28:22.865Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T12:35:33.467Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T12:43:46.258Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T12:44:27.581Z"
+      },
+      {
+        "blockNumber": 2,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T12:56:08.434Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T13:07:32.334Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T13:07:57.887Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T13:08:03.723Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T13:08:18.459Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T13:15:19.808Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T13:22:52.204Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T13:23:34.464Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T13:52:22.444Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T14:08:40.425Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T14:08:55.523Z"
+      },
+      {
+        "blockNumber": 2,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T14:11:03.023Z"
+      },
+      {
+        "blockNumber": 2,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T17:11:50.781Z"
+      },
+      {
+        "blockNumber": 3,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T17:12:02.123Z"
+      },
+      {
+        "blockNumber": 3,
+        "category": "А (люди)",
+        "timestamp": "2024-09-25T17:12:39.936Z"
       }
     ],
     "reward": 1.1851851851851851
