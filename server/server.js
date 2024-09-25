@@ -24,6 +24,7 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
 app.use(cors({
   origin: CLIENT_URL,
   methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
 }));
 
 const io = socketIo(server, {
