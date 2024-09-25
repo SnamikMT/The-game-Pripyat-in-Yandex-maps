@@ -6,7 +6,7 @@
     "inGame": false,
     "answers": [],
     "points": 32,
-    "moves": 66,
+    "moves": 67,
     "history": [
       {
         "blockNumber": 3,
@@ -247,6 +247,11 @@
         "blockNumber": 2,
         "category": "А (люди)",
         "timestamp": "2024-09-25T21:33:22.924Z"
+      },
+      {
+        "blockNumber": 3,
+        "category": "Б (предметы)",
+        "timestamp": "2024-09-25T22:00:31.517Z"
       }
     ],
     "reward": 1.1851851851851851

@@ -176,6 +176,7 @@ const Header = ({
         <ul>
           <li><Link to="/categories">Игра</Link></li>
           <li><Link to="/game">Ходы</Link></li>
+          <li><Link to="/maps">Карты</Link></li>
           <li><Link to="/statistics">Статистика</Link></li>
           {team.role === 'admin' && (
             <>
@@ -190,16 +191,17 @@ const Header = ({
       {/* Бургер-меню для мобильной версии */}
       <nav className={`burger-nav ${burgerMenuOpen ? 'open' : ''}`}>
         <ul>
-          <li><Link to="/categories">Categories</Link></li>
-          <li><Link to="/game">Game</Link></li>
-          <li><Link to="/statistics">Statistics</Link></li>
+          <li><Link to="/categories">Играть</Link></li>
+          <li><Link to="/game">Ходы</Link></li>
+          <li><Link to="/maps">Карты</Link></li>
+          <li><Link to="/statistics">Статистика</Link></li>
           {team.role === 'admin' && (
             <>
-              <li><Link to="/manage-teams">Manage Teams</Link></li>
+              <li><Link to="/manage-teams">Команды</Link></li>
               <li><button onClick={handleMoveHistory}>История ходов</button></li>
             </>
           )}
-          <li className='log'><button onClick={onLogout}>Logout</button></li>
+          <li className='log'><button onClick={onLogout}>Выход</button></li>
         </ul>
       </nav>
 
