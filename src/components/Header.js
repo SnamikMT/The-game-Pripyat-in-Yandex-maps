@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+import config from './config';
+
+
 const formatTime = (timeInSeconds) => {
   if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
   const minutes = Math.floor(timeInSeconds / 60);
@@ -35,7 +38,7 @@ const Header = ({
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/questions');
+        const response = await axios.get(`${config.apiBaseUrl}/api/questions`);
         setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
       } catch (error) {
         setErrorMessage('Ошибка загрузки вопросов');
@@ -79,7 +82,7 @@ const Header = ({
       return;
     }
     try {
-      const response = await axios.post('http://localhost:5000/api/add-question', {
+      const response = await axios.post(`${config.apiBaseUrl}/api/add-question`, {
         question: {
           text: newQuestion,
           minScore: Number(minScore),
@@ -98,7 +101,7 @@ const Header = ({
 
   const handleDeleteQuestion = async (index) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/delete-question', { index });
+      const response = await axios.post(`${config.apiBaseUrl}/api/delete-question`, { index });
       setLocalQuestions(Array.isArray(response.data.questions) ? response.data.questions : []);
     } catch (error) {
       setErrorMessage('Ошибка удаления вопроса');
@@ -118,8 +121,8 @@ const Header = ({
         setErrorMessage('Длительность игры должна быть больше 0');
         return;
       }
-      await axios.post('http://localhost:5000/api/clear-answers');
-      const response = await axios.post('http://localhost:5000/api/start-game', {
+      await axios.post(`${config.apiBaseUrl}/api/clear-answers`);
+      const response = await axios.post(`${config.apiBaseUrl}/api/start-game`, {
         duration: gameDuration * 60,
       });
 
@@ -140,7 +143,7 @@ const Header = ({
 
   const handleEndGame = async () => {
     try {
-      await axios.post('http://localhost:5000/api/end-game');
+      await axios.post(`${config.apiBaseUrl}/api/end-game`);
       setGameEnded(true);
       setGameStarted(false);
       socket.emit('game_ended');

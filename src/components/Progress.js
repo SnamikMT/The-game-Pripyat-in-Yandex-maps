@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios from 'axios';
+
+import config from './config';
+
+
 import "../style/style.css";
 
 const Progress = () => {
@@ -8,7 +12,7 @@ const Progress = () => {
   useEffect(() => {
     const fetchTeamsData = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/teams-progress");
+        const response = await axios.get(`${config.apiBaseUrl}/api/teams-progress`);
         setTeamsData(response.data.answers); // Получаем данные ответов команд
       } catch (error) {
         console.error("Ошибка при получении данных о прогрессе команд:", error);

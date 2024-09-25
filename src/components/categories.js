@@ -32,7 +32,7 @@ const Categories = ({ team }) => {
 
   // Получение блоков при монтировании
   useEffect(() => {
-    fetch('http://localhost:5000/api/blocks')
+    fetch(`${config.apiBaseUrl}/api/blocks`)
       .then(response => response.json())
       .then(data => setCategories(data))
       .catch(error => console.error('Error loading block data:', error));
@@ -83,7 +83,7 @@ const handleSearch = async () => {
 // Функция для сохранения истории поиска
 const saveSearchHistory = async (teamName, blockNumber, category) => {
   try {
-    const response = await fetch('http://localhost:5000/api/save-history', {
+    const response = await fetch(`${config.apiBaseUrl}/api/save-history`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
   // Обновление количества ходов через API
   const updateMoves = async (teamName) => {
     try {
-      const response = await fetch('http://localhost:5000/api/update-moves', {
+      const response = await fetch(`${config.apiBaseUrl}/api/update-moves`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
     formData.append("showDocumentIcon", foundBlock.showDocumentIcon);
     formData.append("showVoiceMessageIcon", foundBlock.showVoiceMessageIcon);
 
-    fetch(`http://localhost:5000/api/blocks/${encodeURIComponent(selectedCategory)}/${inputValue}`, {
+    fetch(`${config.apiBaseUrl}/${encodeURIComponent(selectedCategory)}/${inputValue}`, {
       method: 'PUT',
       body: formData,
     })

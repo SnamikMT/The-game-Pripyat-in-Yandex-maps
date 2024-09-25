@@ -18,8 +18,9 @@ import AddQuestion from "./components/AddQuestion";
 import MoveHistory from './components/MoveHistory';
 import { GameProvider } from './components/GameContext';
 import MessagePopup from './components/MessagePopup';
+import config from './components/config';
 
-const socket = io("http://localhost:5000");
+const socket = io(config.socketUrl);
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -36,7 +37,7 @@ const App = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/questions");
+        const response = await axios.get(`${config.apiBaseUrl}/api/questions`);
         setQuestions(response.data);
       } catch (error) {
         console.error("Error fetching questions:", error);
@@ -69,8 +70,8 @@ const App = () => {
     const fetchData = async () => {
       try {
         const [teamsResponse, answersResponse] = await Promise.all([
-          axios.get("http://localhost:5000/api/teams"),
-          axios.get("http://localhost:5000/api/answers"),
+          axios.get(`${config.apiBaseUrl}/api/teams`),
+          axios.get(`${config.apiBaseUrl}/api/answers`),
         ]);
         setTeamsData(teamsResponse.data || []);
         setAnswersData(answersResponse.data.answers || []);
@@ -85,7 +86,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/teams')
+    axios.get(`${config.apiBaseUrl}/api/teams`)
       .then(response => {
         console.log('Teams data:', response.data); // Лог ответа с сервера
         setTeamsData(response.data || []);
@@ -176,7 +177,7 @@ const App = () => {
     }
   
     try {
-      const response = await axios.post('http://localhost:5000/api/join-game', { teamName });
+      const response = await axios.post(`${config.apiBaseUrl}/api/join-game`, { teamName });
       console.log('Join game response:', response.data);
     } catch (error) {
       console.error('Error joining game:', error.response?.data || error.message);
@@ -187,7 +188,7 @@ const App = () => {
   // Handle starting the game
   const handleStartGame = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/api/start-game");
+      const response = await axios.post(`${config.apiBaseUrl}/api/start-game`);
       setGameStarted(true);
       setRemainingTime(response.data.duration);
       console.log("Игра началась успешно.");
@@ -199,7 +200,7 @@ const App = () => {
   // Handle ending the game
   const handleEndGame = async () => {
     try {
-      await axios.post("http://localhost:5000/api/end-game");
+      await axios.post(`${config.apiBaseUrl}/api/end-game`);
       setGameStarted(false);
       setGameEnded(true);
       console.log("Игра завершена.");
@@ -221,7 +222,7 @@ const App = () => {
   const handlePrepare = async () => {
     try {
       if (team && team.username) {
-        await axios.post("http://localhost:5000/api/prepare", { teamName: team.username });
+        await axios.post(`${config.apiBaseUrl}/api/prepare`, { teamName: team.username });
         console.log("Команда подготовилась.");
       }
     } catch (error) {

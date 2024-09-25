@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+
+import config from './config';
 import { colors } from '@mui/material';
 
 const MoveHistory = () => {
@@ -9,7 +11,7 @@ const MoveHistory = () => {
   useEffect(() => {
     const fetchTeamMoves = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/teams'); // Получаем данные из teams.json
+        const response = await axios.get(`${config.apiBaseUrl}/api/teams`); // Получаем данные из teams.json
         setTeamMoves(response.data);
       } catch (error) {
         console.error('Error fetching team moves:', error);
@@ -18,7 +20,7 @@ const MoveHistory = () => {
 
     const fetchBlocks = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/blocks'); // Получаем данные блоков
+        const response = await axios.get(`${config.apiBaseUrl}/api/blocks`); // Получаем данные блоков
         setBlocks(response.data);
       } catch (error) {
         console.error('Error fetching blocks:', error);

@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { TextField, Button, Container, Typography, List, ListItem, ListItemText } from '@mui/material';
 import axios from 'axios';
 
+import config from './config';
+
+
 const AddQuestion = () => {
   const [question, setQuestion] = useState("");
   const [answers, setAnswers] = useState([]);
@@ -11,7 +14,7 @@ const AddQuestion = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/questions");
+        const response = await axios.get(`${config.apiBaseUrl}/api/questions`);
         setQuestionsList(response.data.questions);
       } catch (error) {
         console.error("Error fetching questions", error);
@@ -23,7 +26,7 @@ const AddQuestion = () => {
 
   const handleAddQuestion = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/api/add-question", {
+      const response = await axios.post(`${config.apiBaseUrl}/api/add-question`, {
         question,
         answers,
       });

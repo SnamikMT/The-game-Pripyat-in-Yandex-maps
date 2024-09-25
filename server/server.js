@@ -10,24 +10,29 @@ const { updateMoves } = require('./moves');
 const { getTeamsData, recordTeamMove } = require('./teamsController');
 const fss = require('fs').promises; // Используем промисы
 
+require('dotenv').config();
+
+
 const app = express();
 const server = http.createServer(app);
+
+app.use(bodyParser.json());
+
+const PORT = process.env.PORT || 5000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+
+app.use(cors({
+  origin: CLIENT_URL,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+}));
+
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: CLIENT_URL,
     methods: ["GET", "POST"]
   }
 });
 
-const PORT = 5000;
-
-app.use(bodyParser.json());
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
 
 // Пути к файлам
 const usersFilePath = "./data/users.json";

@@ -1,6 +1,10 @@
 import React, { useState } from "react";
-import axios from "axios";
 import '../style/AddUser.css';  // Подключаем стили
+
+import axios from 'axios';
+
+import config from './config';
+
 
 const AddUser = () => {
   const [username, setUsername] = useState("");
@@ -18,7 +22,7 @@ const AddUser = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5000/api/users", {
+      const response = await axios.post(`${config.apiBaseUrl}/api/users`, {
         username,
         password,
         role,

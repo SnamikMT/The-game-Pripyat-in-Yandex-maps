@@ -3,7 +3,11 @@ import io from "socket.io-client";
 import AddUser from "./AddUser"; 
 import '../style/ManageTeams.css';  // Подключаем стили
 
-const socket = io("http://localhost:5000");
+import axios from 'axios';
+
+import config from './config';
+
+const socket = io(config.socketUrl);
 
 const ManageTeams = () => {
   const [teams, setTeams] = useState([]);
@@ -16,7 +20,7 @@ const ManageTeams = () => {
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/users");
+        const response = await fetch(`${config.apiBaseUrl}/api/users`);
         const data = await response.json();
         setTeams(data);
       } catch (error) {
@@ -53,7 +57,7 @@ const ManageTeams = () => {
 
   const handleDelete = async (username) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${username}`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/${username}`, {
         method: "DELETE",
       });
 
@@ -74,7 +78,7 @@ const ManageTeams = () => {
 
   const handleSaveEdit = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${editData.username}`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/${editData.username}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -96,7 +100,7 @@ const ManageTeams = () => {
   const handleToggleVisibility = async (team) => {
     const updatedUser = { ...team, isHidden: !team.isHidden };
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${team.username}`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/${team.username}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios from 'axios';
+
+import config from './config';
 
 const AddTeam = () => {  
   const [username, setUsername] = useState("");
@@ -12,7 +14,7 @@ const AddTeam = () => {
 
     try {
       const trimmedUsername = username.trim().toLowerCase();
-      await axios.post("http://localhost:5000/api/users", {
+      await axios.post(`${config.apiBaseUrl}/api/users`, {
         username: trimmedUsername,
         password,
         role,

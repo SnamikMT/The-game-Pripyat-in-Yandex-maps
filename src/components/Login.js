@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { TextField, Button, Container, Typography, Box } from "@mui/material";
-import axios from "axios";
+import axios from 'axios';
+
+import config from './config';
+
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState("");
@@ -12,7 +15,7 @@ const Login = ({ onLogin }) => {
     console.log("Attempting login with:", username, password);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/login", {
+      const response = await axios.post(`${config.apiBaseUrl}/api/login`, {
         username,
         password,
       });

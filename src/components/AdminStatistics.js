@@ -3,7 +3,9 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import '../style/AdminStatistics.css';
 
-const socket = io('http://localhost:5000');
+import config from './config';
+
+const socket = io(config.socketUrl);
 
 const AdminStatistics = ({ team }) => {
   const [teamsData, setTeamsData] = useState([]);
@@ -17,15 +19,15 @@ const AdminStatistics = ({ team }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const teamsResponse = await axios.get('http://localhost:5000/api/teams');
+        const teamsResponse = await axios.get(`${config.apiBaseUrl}/api/teams`);
         if (Array.isArray(teamsResponse.data)) {
           setTeamsData(teamsResponse.data);
         }
 
-        const answersResponse = await axios.get('http://localhost:5000/api/answers');
+        const answersResponse = await axios.get(`${config.apiBaseUrl}/api/answers`);
         setAnswersData(answersResponse.data || []);
 
-        const questionsResponse = await axios.get('http://localhost:5000/api/questions');
+        const questionsResponse = await axios.get(`${config.apiBaseUrl}/api/questions`);
         if (Array.isArray(questionsResponse.data)) {
           setQuestions(questionsResponse.data);
         } else if (questionsResponse.data.questions && Array.isArray(questionsResponse.data.questions)) {
@@ -77,7 +79,7 @@ const AdminStatistics = ({ team }) => {
       });
 
     try {
-      const response = await axios.post('http://localhost:5000/api/teams/admin/scores', {
+      const response = await axios.post(`${config.apiBaseUrl}/api/teams/admin/scores`, {
         team,
         scores: teamScores,
       });
@@ -107,7 +109,7 @@ const AdminStatistics = ({ team }) => {
     try {
       // Отправляем обновленные данные на сервер для сохранения
       await Promise.all(updatedTeams.map(async (team) => {
-        const response = await axios.post('http://localhost:5000/api/teams/update-reward', {
+        const response = await axios.post(`${config.apiBaseUrl}/api/teams/update-reward`, {
           team: team.username,
           reward: team.reward, // Отправляем новую награду
         });
