@@ -69,7 +69,7 @@ const MoveHistory = () => {
                           <>
                             <p>Предпросмотр блока: {block.title}</p>
                             {block.imageUrl ? (
-                              <img src={`http://localhost:5000${block.imageUrl}`} alt={block.title} style={{ width: '100px' }} />
+                              <img src={`${config.apiBaseUrl}${block.imageUrl}`} alt={block.title} style={{ width: '100px' }} />
                             ) : (
                               <p>Изображение отсутствует</p>
                             )}
