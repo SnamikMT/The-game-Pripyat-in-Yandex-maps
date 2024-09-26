@@ -26,23 +26,35 @@
 }
 
 .toggle-button {
-  padding: 10px;
   margin-right: 10px;
   background-color: #ed3f3f; /* Цвет кнопки */
-  color: white; /* Белый текст кнопки */
+  color: #ffffff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
   transition: background-color 0.3s ease; /* Плавный переход цвета */
+  padding: 8px 15px;
+}
+
+.toggle-button2 {
+  margin-right: 10px;
+  background-color: #ffeba0;
+  color: #272727;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease; /* Плавный переход цвета */
+  padding: 8px 15px;
 }
 
 .toggle-button.active {
-  background-color: #e63946; /* Цвет активной кнопки */
+  background-color: #ffeba0;
+  color: #272727;
 }
 
 .search-container {
-  margin-bottom: 20px;
   width: 100%;
   max-width: 400px;
 }
@@ -70,9 +82,11 @@
   align-items: center;
   padding: 10px;
   margin-bottom: 10px;
-  background-color: #1f1f1f; /* Темный фон для элемента списка */
+  background-color: #1f1f1f;
   border-radius: 5px;
   border: 1px solid #ddd; /* Светлый бордер */
+  width: 100%;
+  justify-content: flex-end;
 }
 
 .delete-button {
@@ -80,10 +94,22 @@
   color: white; /* Белый текст */
   border: none;
   border-radius: 5px;
-  padding: 5px 10px;
   cursor: pointer;
 }
 
 .delete-button:hover {
   background-color: #c82333; /* Более темный красный при наведении */
+}
+
+.edit-button {
+  margin-left: 15px;
+  background-color: #363636;
+}
+
+.toggle-button {
+  margin-left: 10px;
+}
+
+.toggle-button2 {
+  margin-left: 10px;
 }

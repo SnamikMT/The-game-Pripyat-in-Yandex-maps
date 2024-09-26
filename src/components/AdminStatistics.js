@@ -122,14 +122,10 @@ const AdminStatistics = ({ team }) => {
 
   return (
     <div className="admin-statistics">
-      <h2>Admin Statistics</h2>
+      <h2>СТАТИСТИКА</h2>
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {isAdmin && (
-        <button onClick={calculateRewards} className="action-button">Рассчитать Награды</button>
-      )}
-
-      <h3>Teams Statistics</h3>
+      <h3>Прогресс</h3>
       <table className="teams-table">
         <thead>
           <tr>
@@ -152,8 +148,12 @@ const AdminStatistics = ({ team }) => {
       </table>
 
       {isAdmin && (
+        <button onClick={calculateRewards} className="action-button gon">Рассчитать Гонорар</button>
+      )}
+
+      {isAdmin && (
         <>
-          <h3>Teams' Answers</h3>
+          <h3 className='answerComand'>Ответы команд</h3>
           <div className="answers-container">
             {answersData.length > 0 ? (
               answersData.map((answer, index) => (

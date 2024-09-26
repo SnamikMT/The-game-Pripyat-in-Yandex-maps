@@ -190,20 +190,35 @@ const Header = ({
 
       {/* Бургер-меню для мобильной версии */}
       <nav className={`burger-nav ${burgerMenuOpen ? 'open' : ''}`}>
-        <ul>
-          <li><Link to="/categories">Играть</Link></li>
-          <li><Link to="/game">Ходы</Link></li>
-          <li><Link to="/maps">Карты</Link></li>
-          <li><Link to="/statistics">Статистика</Link></li>
-          {team.role === 'admin' && (
-            <>
-              <li><Link to="/manage-teams">Команды</Link></li>
-              <li><button onClick={handleMoveHistory}>История ходов</button></li>
-            </>
-          )}
-          <li className='log'><button onClick={onLogout}>Выход</button></li>
-        </ul>
-      </nav>
+          <ul>
+            <Link to="/categories">
+              <li>Играть</li>
+            </Link>
+            <Link to="/game">
+              <li>Ходы</li>
+            </Link>
+            <Link to="/maps">
+              <li>Карты</li>
+            </Link>
+            <Link to="/statistics">
+              <li>Статистика</li>
+            </Link>
+            {team.role === 'admin' && (
+              <>
+                <Link to="/manage-teams">
+                  <li>Команды</li>
+                </Link>
+                <li>
+                  <button className="his" onClick={handleMoveHistory}>История ходов</button>
+                </li>
+              </>
+            )}
+            <li className='log'>
+              <button onClick={onLogout}>Выход</button>
+            </li>
+          </ul>
+        </nav>
+
 
       <div className="right-user">
         <span>{team?.username}</span>
@@ -218,32 +233,35 @@ const Header = ({
               <button className="close-button" onClick={toggleActions}>X</button> {/* Кнопка закрытия */}
               <h1 className='adminpanel' style={{ color: '#272727', textAlign: 'center'}}>Админ панель</h1>
               <h3>Создать вопрос</h3>
-              <label>Вопросы:</label>
+              <label>Текст Вопроса</label>
               <input
+                className="questinput"
                 type="text"
                 value={newQuestion}
                 onChange={(e) => setNewQuestion(e.target.value)}
-                placeholder="Enter question text"
+                placeholder="Начните вводить"
               />
-              <label>Минимум баллов:</label>
+              <label className='questbal'>Минимум баллов:</label>
               <input
+                className="questinput"
                 type="number"
                 value={minScore}
                 onChange={(e) => setMinScore(e.target.value)}
                 placeholder="Минимум баллов"
               />
-              <label>Максимум баллов:</label>
+              <label className='questbal'>Максимум баллов:</label>
               <input
+              className="questinput"
                 type="number"
                 value={maxScore}
                 onChange={(e) => setMaxScore(e.target.value)}
                 placeholder="Максимум баллов"
               />
-              <button onClick={handleAddQuestion} className="action-button">Добавить вопрос</button>
+              <button onClick={handleAddQuestion} className="action-button add">Добавить вопрос</button>
 
               <div>
                 <button onClick={() => setIsQuestionListVisible(!isQuestionListVisible)} className="toggle-list-button">
-                  {isQuestionListVisible ? 'Hide Questions' : 'Show Questions'}
+                  {isQuestionListVisible ? 'Скрыть вопросы' : 'Показать вопросы'}
                 </button>
                 {isQuestionListVisible && (
                   <ul className="question-list">
@@ -265,15 +283,16 @@ const Header = ({
                 Отправить игрокам сообщение(Юпитер)
               </button>
 
-              <label>Длительность игры в (Минутах):</label>
+              <label className='min'>Длительность игры в (Минутах):</label>
               <input
+                className='minut'
                 type="number"
                 value={gameDuration}
                 onChange={(e) => setGameDuration(Number(e.target.value))}
               />
 
-              <button onClick={handleStartGame} className="action-button">Start Game</button>
-              <button onClick={handleEndGame} className="action-button">End Game</button>
+              <button onClick={handleStartGame} className="action-button">Запустить игру</button>
+              <button onClick={handleEndGame} className="action-button">Завершить игру</button>
             </div>
           )}
         </div>

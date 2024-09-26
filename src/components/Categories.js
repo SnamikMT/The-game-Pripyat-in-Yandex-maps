@@ -186,7 +186,7 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
       }}
     >
       <div style={{ width: '100%', maxWidth: '600px', background: 'rgba(255, 255, 255, 0.8)', padding: '20px', borderRadius: '10px' }}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom >
           Сделать ход
         </Typography>
 
@@ -219,10 +219,17 @@ const saveSearchHistory = async (teamName, blockNumber, category) => {
           </Grid>
 
           <Grid item xs={12} sm={2}>
-            <Button className="searchCategory" variant="contained" color="#ffeb99" fullWidth onClick={handleSearch}>
+            <Button 
+              sx={{ backgroundColor: '#ffeb99' , color: 'black'}} 
+              variant="contained" 
+              fullWidth 
+              onClick={handleSearch}
+            >
               Поиск
             </Button>
           </Grid>
+
+
         </Grid>
 
         {foundBlock && (

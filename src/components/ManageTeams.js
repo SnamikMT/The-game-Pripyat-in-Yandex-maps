@@ -194,10 +194,10 @@ const ManageTeams = () => {
                     Изменить
                   </button>
                   <button
-                    className="toggle-button"
+                    className="toggle-button2"
                     onClick={() => handleToggleVisibility(team)}
                   >
-                    {team.isHidden ? "Сделать активным" : "Скрыть"}
+                    {team.isHidden ? "Активировать" : "Скрыть"}
                   </button>
                   <button
                     className="delete-button"
