@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
 import config from './config';
 
-
+// Форматирование времени в формат "минуты:секунды"
 const formatTime = (timeInSeconds) => {
   if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
   const minutes = Math.floor(timeInSeconds / 60);
@@ -35,6 +34,7 @@ const Header = ({
 
   const navigate = useNavigate();
 
+  // Загрузка вопросов при первом рендере
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -48,6 +48,7 @@ const Header = ({
     fetchQuestions();
   }, []);
 
+  // Обработка событий от сокета для начала игры и обновления таймера
   useEffect(() => {
     socket.on('game_started', (questions) => {
       setQuestions(questions);
@@ -110,7 +111,7 @@ const Header = ({
   };
 
   const handleSendForcedMessage = () => {
-    const forcedMessage = `11:55\n\nНа улице к вам подошел мужчина средних лет, представился другом и произнес:\n- Меня просили передать, что ищут с вами встречи, есть тут у нас один чудик, в свое время работал на "Юпитере", он-то вас и ждет, говорит, у него для вас интересная информация.\n- А где его найти-то, - спрашиваете вы?\n- Да "на работе" и найти. Где ж ему быть. На то он и Паша "Юпитер".`;
+    const forcedMessage = `\nНа улице к вам подошел мужчина средних лет, представился другом и произнес:\n- Меня просили передать, что ищут с вами встречи, есть тут у нас один чудик, в свое время работал на "Юпитере", он-то вас и ждет, говорит, у него для вас интересная информация.\n- А где его найти-то, - спрашиваете вы?\n- Да "на работе" и найти. Где ж ему быть. На то он и Паша "Юпитер".`;
 
     socket.emit('force_message', forcedMessage);
   };
@@ -159,17 +160,10 @@ const Header = ({
 
   return (
     <header className="header-container">
-      <span className="timer-text">Time left: {formatTime(remainingTime)}</span>
+      <span className="timer-text"><span className='Timer'>{formatTime(remainingTime)}</span></span>
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {/* Бургер-меню для мобильной версии */}
-      <div className="burger-menu" onClick={toggleBurgerMenu}>
-        <div className={`burger-icon ${burgerMenuOpen ? 'open' : ''}`}>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-      </div>
+      
 
       {/* Стандартное меню для десктопа */}
       <nav className={`nav-desktop ${burgerMenuOpen ? 'open' : ''}`}>
@@ -187,6 +181,7 @@ const Header = ({
           <li className='log'><button onClick={onLogout} className="logouts">Выход</button></li>
         </ul>
       </nav>
+
 
       {/* Бургер-меню для мобильной версии */}
       <nav className={`burger-nav ${burgerMenuOpen ? 'open' : ''}`}>
@@ -221,8 +216,20 @@ const Header = ({
 
 
       <div className="right-user">
-        <span>{team?.username}</span>
+        <span className='users'>{team?.username}</span>
       </div>
+
+
+      {/* Бургер-меню для мобильной версии */}
+      <div className="burger-menu" onClick={toggleBurgerMenu}>
+              <div className={`burger-icon ${burgerMenuOpen ? 'open' : ''}`}>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+            </div>
+
+            
       {team.role === 'admin' && (
         <div className="floating-action-button">
           <button onClick={toggleActions} className="round-button">

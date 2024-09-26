@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useGameContext } from './GameContext';
+import config from './config';
 
 const formatTime = (timeInSeconds) => {
   if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
@@ -11,28 +12,57 @@ const formatTime = (timeInSeconds) => {
 
 const Game = ({ team, socket }) => {
   const { gameData, setGameData } = useGameContext();
-  const { questions, gameStarted, timeLeft, submitted } = gameData;
-  const [joined, setJoined] = useState(() => {
-    const savedJoined = localStorage.getItem('joined');
-    return savedJoined === 'true';
-  });
+  const { questions = [], gameStarted, timeLeft, submitted } = gameData; 
   const [answers, setAnswers] = useState({});
   const [activeTeams, setActiveTeams] = useState([]);
+  const [hasSubmitted, setHasSubmitted] = useState(false); 
+
+  // Проверка, отправлял ли пользователь ответы
+  useEffect(() => {
+    const checkIfSubmitted = async () => {
+      try {
+        const response = await axios.get(`${config.apiBaseUrl}/api/check-submission?team=${team.username}`);
+        if (response.data.submitted) {
+          setHasSubmitted(true); 
+          setGameData((prevData) => ({ ...prevData, submitted: true }));
+        }
+      } catch (error) {
+        console.error('Ошибка проверки отправки ответов:', error);
+      }
+    };
+  
+    if (team && gameStarted) {
+      checkIfSubmitted();
+    }
+  }, [team, gameStarted, setGameData]);
+  
 
   useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await axios.get(`${config.apiBaseUrl}/api/questions`);
+        const questions = response.data.questions || []; 
+        setGameData((prevData) => ({
+          ...prevData,
+          questions,
+        }));
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+      }
+    };
+
+    fetchQuestions();
+
     socket.on('game_started', (gameData) => {
       setGameData((prevData) => ({
         ...prevData,
         gameStarted: true,
-        questions: gameData.questions,
         timeLeft: gameData.timeLeft,
       }));
-      console.log('Game started with time:', gameData.timeLeft);
     });
 
     socket.on('timer_update', ({ minutes, seconds }) => {
       const totalTimeInSeconds = minutes * 60 + seconds;
-      console.log('Received time from server:', totalTimeInSeconds);
       setGameData((prevData) => ({ ...prevData, timeLeft: totalTimeInSeconds }));
       if (totalTimeInSeconds <= 0) {
         alert('Время истекло!');
@@ -51,44 +81,20 @@ const Game = ({ team, socket }) => {
     };
   }, [socket, setGameData]);
 
-  const handleJoinGame = () => {
-    if (team && !joined) {
-      socket.emit('join_game', team);
-      setJoined(true);
-      localStorage.setItem('joined', 'true');
-    }
-  };
-
+  // Обработка изменения ответов
   const handleAnswerChange = (index, value) => {
-    if (!submitted) {
-      setAnswers((prevAnswers) => ({
-        ...prevAnswers,
-        [index]: value,
-      }));
-    }
+    setAnswers((prevAnswers) => ({
+      ...prevAnswers,
+      [index]: value,
+    }));
   };
 
+  // Отправка ответов
   const handleSubmit = () => {
     socket.emit('submit_answers', { team, answers });
     setGameData((prevData) => ({ ...prevData, submitted: true }));
+    setHasSubmitted(true); 
   };
-
-  if (!joined) {
-    return (
-      <div className="game-container">
-        <h1>Присоединиться к игре</h1>
-        <button onClick={handleJoinGame}>Подключиться к игре</button>
-      </div>
-    );
-  }
-
-  if (!gameStarted) {
-    return (
-      <div className="waiting-container">
-        <h2 className="waiting-message">Ожидание старта игры...</h2>
-      </div>
-    );
-  }
 
   return (
     <div className="game-container">
@@ -106,7 +112,7 @@ const Game = ({ team, socket }) => {
       </div>
 
       <div className="questions-container">
-        {questions.length ? (
+        {!hasSubmitted && questions.length ? (
           questions.map((question, index) => (
             <div key={index} className="question-card">
               <p>{question.text}</p>
@@ -116,21 +122,20 @@ const Game = ({ team, socket }) => {
                 value={answers[index] || ''}
                 onChange={(e) => handleAnswerChange(index, e.target.value)}
                 placeholder="Ваш ответ"
-                disabled={submitted}
               />
             </div>
           ))
+        ) : hasSubmitted ? (
+          <div>Ваши ответы успешно отправлены!</div>
         ) : (
           <div>Ожидание вопросов...</div>
         )}
       </div>
 
-      <button onClick={handleSubmit} disabled={submitted}>Отправить ответы</button>
-
-      {submitted && (
-        <div className="submission-message">
-          Ваши ответы успешно отправлены!
-        </div>
+      {!hasSubmitted && (
+        <button onClick={handleSubmit} disabled={!gameStarted}>
+          Отправить ответы
+        </button>
       )}
     </div>
   );

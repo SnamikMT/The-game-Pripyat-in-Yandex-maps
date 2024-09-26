@@ -454,13 +454,51 @@ app.put('/api/blocks/:category/:number', upload.fields([{ name: 'image' }, { nam
   }
 });
 
+// Логика добавления пользователей в команды, если они не скрыты и являются user
+const addTeamsFromUsers = async () => {
+  try {
+    // Читаем данные пользователей
+    const usersData = await readJsonFile(usersFilePath);
+    
+    // Читаем данные команд
+    const teamsData = await readJsonFile(teamsFilePath);
 
-// Логин
-app.post("/api/login", (req, res) => {
+    // Если данных команд нет, создаем пустой массив
+    const teams = Array.isArray(teamsData) ? teamsData : [];
+
+    // Фильтруем пользователей по условиям (role: "user" и isHidden: false)
+    const filteredUsers = usersData.users.filter((user) => user.role === 'user' && !user.isHidden);
+
+    // Добавляем отфильтрованных пользователей в команды, если их там еще нет
+    filteredUsers.forEach((user) => {
+      const existingTeam = teams.find((team) => team.username === user.username);
+      if (!existingTeam) {
+        teams.push({
+          username: user.username,
+          role: user.role,
+          isPrepared: false,
+          inGame: false,
+          moves: 0,
+          answers: []
+        });
+      }
+    });
+
+    // Записываем обновленные команды в teams.json
+    await writeJsonFile(teamsFilePath, teams);
+    console.log('Команды успешно обновлены!');
+  } catch (error) {
+    console.error('Ошибка при обновлении команд:', error);
+  }
+};
+
+// Пример использования в логине
+app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   console.log("Попытка логина:", username, password);
 
-  const user = users.find((u) => u.username === username && u.password === password);
+  const usersData = await readJsonFile(usersFilePath);
+  const user = usersData.users.find((u) => u.username === username && u.password === password);
 
   if (!user) {
     return res.status(401).json({ message: "Неверные имя пользователя или пароль" });
@@ -471,37 +509,16 @@ app.post("/api/login", (req, res) => {
     return res.status(403).json({ message: "Ваш аккаунт скрыт. Пожалуйста, обратитесь к администратору." });
   }
 
-  // Если пользователь не скрыт, продолжаем авторизацию
-  fs.readFile(teamsFilePath, 'utf-8', (err, data) => {
-    if (err) {
-      console.error('Ошибка чтения teams.json:', err);
-      return res.status(500).json({ message: 'Ошибка сервера' });
-    }
-
-    let teams = JSON.parse(data);
-    const existingTeam = teams.find((team) => team.username === user.username);
-
-    if (!existingTeam) {
-      teams.push({
-        username: user.username,
-        role: user.role,
-        isPrepared: false, // Новая команда не готова к игре
-        inGame: false,
-        answers: []
-      });
-
-      fs.writeFile(teamsFilePath, JSON.stringify(teams, null, 2), (err) => {
-        if (err) {
-          console.error('Ошибка записи в teams.json:', err);
-          return res.status(500).json({ message: 'Ошибка сервера' });
-        }
-      });
-    }
+  try {
+    // Добавляем пользователей в команды, если они являются обычными пользователями и не скрыты
+    await addTeamsFromUsers();
 
     res.status(200).json({ username: user.username, role: user.role });
-  });
+  } catch (err) {
+    console.error('Ошибка добавления команд:', err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
 });
-
 
 // Подготовка команды к игре
 app.post('/api/prepare-team', (req, res) => {
@@ -683,6 +700,50 @@ app.post('/api/answers', (req, res) => {
   });
 });
 
+// Обработчик отправки ответов
+app.post('/api/submit-answers', (req, res) => {
+  const { team, answers } = req.body;
+
+  // Чтение текущих ответов из файла
+  fs.readFile(answersFilePath, 'utf-8', (err, data) => {
+    if (err) {
+      return res.status(500).json({ error: 'Ошибка чтения файла ответов.' });
+    }
+
+    let answersData = [];
+    if (data) {
+      answersData = JSON.parse(data);
+    }
+
+    // Найти команду по имени и обновить её данные
+    const teamIndex = answersData.findIndex((t) => t.teamName === team.username);
+
+    if (teamIndex !== -1) {
+      // Если команда найдена, обновляем её ответы и ставим флажок "submitted"
+      answersData[teamIndex] = {
+        ...answersData[teamIndex],
+        answers,
+        submitted: true, // Обновляем статус
+      };
+    } else {
+      // Если команды нет, добавляем новую запись
+      answersData.push({
+        teamName: team.username,
+        answers,
+        submitted: true, // Новый флажок
+      });
+    }
+
+    // Сохраняем обновлённые данные
+    fs.writeFile(answersFilePath, JSON.stringify(answersData, null, 2), (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Ошибка записи файла ответов.' });
+      }
+      res.json({ success: true });
+    });
+  });
+});
+
 
 // Route to get answers data
 app.get("/api/answers", (req, res) => {
@@ -754,12 +815,11 @@ app.post('/api/start-game', async (req, res) => {
     const teamsData = await fss.readFile(path.join(__dirname, 'data', 'teams.json'), 'utf8');
     let teams = JSON.parse(teamsData);
 
-    // Обновляем статус команд: только подготовленные команды могут войти в игру
+    // Обновляем статус команд: только подготовленные команды могут войти в игру и очищаем историю
     teams = teams.map(team => {
-      if (team.isPrepared) {
         team.inGame = true;
         team.isPrepared = false; // Сброс флага готовности
-      }
+        team.history = []; // Очищаем историю команды
       return team;
     });
 
@@ -779,6 +839,7 @@ app.post('/api/start-game', async (req, res) => {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
+
 
 // Эндпоинт для окончания игры
 app.post('/api/end-game', (req, res) => {
@@ -861,10 +922,97 @@ app.post('/api/record-score', (req, res) => {
   res.status(200).send('Score recorded');
 });
 
+
+// Эндпоинт для расчета гонораров
+app.post('/api/teams/update-reward', async (req, res) => {
+  const { team, reward } = req.body;
+
+  if (!team || reward === undefined) {
+    return res.status(400).json({ message: 'Invalid request' });
+  }
+
+  try {
+    let teams = await readTeamsFile();
+
+    const teamIndex = teams.findIndex(t => t.username === team);
+    if (teamIndex === -1) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    // Обновляем только поле reward
+    teams[teamIndex].reward = reward;
+
+    await writeTeamsFile(teams);
+
+    res.json({ message: 'Reward updated successfully', team: teams[teamIndex] });
+  } catch (error) {
+    console.error('Error updating reward:', error);
+    res.status(500).json({ message: 'Failed to update reward' });
+  }
+});
+
+// Эндпоинт для очистки гонораров
+app.post('/api/teams/clear-reward', async (req, res) => {
+  const { team } = req.body;
+
+  if (!team) {
+    return res.status(400).json({ message: 'Invalid request' });
+  }
+
+  try {
+    let teams = await readTeamsFile();
+
+    const teamIndex = teams.findIndex(t => t.username === team);
+    if (teamIndex === -1) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    // Очищаем только поле reward
+    teams[teamIndex].reward = 0;
+
+    await writeTeamsFile(teams);
+
+    res.json({ message: 'Reward cleared successfully', team: teams[teamIndex] });
+  } catch (error) {
+    console.error('Error clearing reward:', error);
+    res.status(500).json({ message: 'Failed to clear reward' });
+  }
+});
+
+// Эндпоинт для полной очистки данных команды (очков, ходов и гонорара)
+app.post('/api/teams/clear-all', async (req, res) => {
+  const { team } = req.body;
+
+  if (!team) {
+    return res.status(400).json({ message: 'Invalid request' });
+  }
+
+  try {
+    let teams = await readTeamsFile();
+
+    const teamIndex = teams.findIndex(t => t.username === team);
+    if (teamIndex === -1) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    // Очищаем поля points, moves и reward
+    teams[teamIndex].reward = 0;
+    teams[teamIndex].points = 0;
+    teams[teamIndex].moves = 0;
+
+    await writeTeamsFile(teams);
+
+    res.json({ message: 'All data cleared successfully', team: teams[teamIndex] });
+  } catch (error) {
+    console.error('Error clearing all data:', error);
+    res.status(500).json({ message: 'Failed to clear all data' });
+  }
+});
+
+// Эндпоинт для обновления баллов команды
 app.post('/api/teams/admin/scores', async (req, res) => {
   const { team, scores } = req.body;
 
-  // Логи
   console.log('Received request to update scores:', { team, scores });
 
   if (!team || !Array.isArray(scores)) {
@@ -872,10 +1020,9 @@ app.post('/api/teams/admin/scores', async (req, res) => {
   }
 
   try {
-    let teams = await readTeamsFile(); // Используем await, так как функция асинхронная
+    let teams = await readTeamsFile();
     console.log('Current teams data:', teams);
 
-    // Проверяем, что teams — это массив
     if (!Array.isArray(teams)) {
       return res.status(500).json({ message: 'Invalid teams data format' });
     }
@@ -889,11 +1036,9 @@ app.post('/api/teams/admin/scores', async (req, res) => {
     const totalScore = scores.reduce((acc, item) => acc + item.score, 0);
     teams[teamIndex].points = (teams[teamIndex].points || 0) + totalScore;
 
-    // Логируем обновленную команду
     console.log('Updated team data:', teams[teamIndex]);
 
-    // Сохраняем обновленные данные
-    await writeTeamsFile(teams); // Сохраняем асинхронно
+    await writeTeamsFile(teams);
 
     res.json({ message: 'Scores updated successfully', teams });
   } catch (error) {
@@ -902,24 +1047,25 @@ app.post('/api/teams/admin/scores', async (req, res) => {
   }
 });
 
-// Обработчик POST-запроса для обновления награды команды
-app.post('/api/teams/update-reward', (req, res) => {
-  const { team, reward } = req.body;
 
-  // Предположим, что данные команд хранятся в файле или базе данных
-  const teams = require('./data/teams.json'); // Загружаем файл с командами
+// API для проверки, отправлены ли ответы
+app.get('/api/check-submission', async (req, res) => {
+  const { team } = req.query;
 
-  // Находим команду по имени и обновляем награду
-  const teamIndex = teams.findIndex((t) => t.username === team);
-  if (teamIndex !== -1) {
-    teams[teamIndex].reward = reward;
+  try {
+    let answersData = await fs.promises.readFile(answersFilePath, 'utf-8');
+    answersData = answersData ? JSON.parse(answersData) : [];
 
-    // Сохраняем обновленный файл (если используете файл для хранения данных)
-    fs.writeFileSync('./data/teams.json', JSON.stringify(teams, null, 2));
+    const teamAnswers = answersData.find((entry) => entry.team === team);
 
-    res.status(200).send({ success: true, teams });
-  } else {
-    res.status(404).send({ error: 'Команда не найдена' });
+    if (teamAnswers) {
+      res.json({ submitted: true });
+    } else {
+      res.json({ submitted: false });
+    }
+  } catch (error) {
+    console.error('Ошибка при проверке ответов:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
@@ -947,36 +1093,11 @@ async function getQuestions() {
 }
 
 const activeTeams = new Set();
-const teams = [];
 let timeLeft; // Время, оставшееся до окончания игры
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('join_game', (team) => {
-    console.log(`${team.username} присоединился к игре`);
-    activeTeams.add(team.username);
-    io.emit('update_teams', Array.from(activeTeams));
-  });
-
-  // Обработчик подключения команды
-  socket.on('team_connected', async (team) => {
-    console.log(`Команда ${team.username} подключилась`);
-
-    // Чтение текущих команд из файла
-    let currentTeams = await readTeamsFile();
-
-    // Проверка на наличие команды
-    const existingTeam = currentTeams.find(t => t.username === team.username);
-    if (!existingTeam) {
-      // Добавление новой команды
-      currentTeams.push(team);
-      await writeTeamsFile(currentTeams); // Сохранение обновленных данных
-
-      // Отправка обновленного списка команд всем подключенным клиентам
-      io.emit('update_teams', currentTeams);
-    }
-  });
 
   socket.on('search_in_category', async (team) => {
     try {

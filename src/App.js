@@ -105,7 +105,7 @@ const App = () => {
       socket.off("update_teams");
     };
   }, []);
-
+  
   
 
   // Socket event listeners

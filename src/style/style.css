@@ -187,6 +187,14 @@
   .log button:hover {
     background-color: #ed3f3f;
   }
+
+  .questinput {
+    width: 75%;
+  }
+
+  .minut {
+    width: 25%;
+  }
 }
 
 .burger-nav.open a{
@@ -477,7 +485,7 @@ ul li a{
 }
 
 .answer-card {
-  background-color: #444;
+  background-color: #333;
   border: 1px solid #555;
   border-radius: 8px;
   padding: 15px;
@@ -487,6 +495,7 @@ ul li a{
 .answer-card h4 {
   margin-bottom: 10px;
   color: #e63946;
+  font-size: 20px;
 }
 
 .answer-card ul {
@@ -721,7 +730,7 @@ h2, h3 {
   padding: 10px; /* Внутренний отступ для карточки ответа */
   border: 1px solid #ccc; /* Граница карточки */
   border-radius: 5px; /* Закругленные углы карточки */
-  background-color: #f9f9f9; /* Светлый фон для карточки */
+  background-color: #333; /* Светлый фон для карточки */
 }
 
 .score-input {
@@ -746,14 +755,13 @@ h2, h3 {
 /* Адаптация для мобильных устройств */
 @media (max-width: 768px) {
   .header-container {
-    flex-direction: column;
     align-items: flex-start;
     padding: 10px;
+    align-items: center;
   }
 
   .left-timer, .right-user, .admin-actions {
     font-size: 1em;
-    margin-top: 10px;
     text-align: left;
   }
 
@@ -763,7 +771,7 @@ h2, h3 {
   }
 
   .action-button {
-    width: 50%;
+    width: 75%;
     text-align: center;
   }
 
@@ -825,6 +833,7 @@ h2, h3 {
     width: 100%;
     text-align: center;
   }
+
 }
 
 @media (max-width: 480px) {
@@ -834,6 +843,7 @@ h2, h3 {
 
   .left-timer, .right-user {
     font-size: 0.9em;
+    margin-right: 30px;
   }
 
   .action-button {
@@ -864,6 +874,9 @@ h2, h3 {
   .waiting-message {
     font-size: 1.2rem;
   }
+
+
+
 }
 
 
@@ -882,7 +895,6 @@ h2, h3 {
 .questinput {
   border-radius: 5px;
   padding: 10px;
-  width: 30%;
   border-radius: 5px;
   border: 1px solid #ccc;
   font-size: 16px;
@@ -906,6 +918,7 @@ h2, h3 {
   background-color: #1f1f1f;
   color: white;
   text-align: center;
+  min-width: 80px;
 }
 
 .min {
@@ -913,9 +926,6 @@ h2, h3 {
   color: #1f1f1f;
 }
 
-.action-button.gon {
-  width: 30%;
-}
 
 .answerComand {
   margin-top: 40px;
@@ -924,4 +934,13 @@ h2, h3 {
 
 .searchCategory {
   background-color: #ffeb99;
+}
+
+.Timer {
+  font-size: 30px;
+  color: #e63946;
+}
+
+.users {
+  font-size: 25px
 }

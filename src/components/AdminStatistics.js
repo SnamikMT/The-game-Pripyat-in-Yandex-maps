@@ -46,7 +46,7 @@ const AdminStatistics = ({ team }) => {
     });
 
     return () => {
-      socket.off('new_answer'); 
+      socket.off('new_answer');
     };
   }, []);
 
@@ -100,18 +100,16 @@ const AdminStatistics = ({ team }) => {
       const points = team.points || 0;
       const reward = points / moves;
   
-      return { ...team, reward: reward };
+      return { ...team, reward: reward }; // Сохраняем все остальные поля команды
     });
   
-    // Обновляем состояние с новыми наградами
     setTeamsData(updatedTeams);
   
     try {
-      // Отправляем обновленные данные на сервер для сохранения
       await Promise.all(updatedTeams.map(async (team) => {
         const response = await axios.post(`${config.apiBaseUrl}/api/teams/update-reward`, {
           team: team.username,
-          reward: team.reward, // Отправляем новую награду
+          reward: team.reward, // Отправляем только обновленную награду
         });
         console.log(`Награда для команды ${team.username} успешно обновлена:`, response.data);
       }));
@@ -119,6 +117,68 @@ const AdminStatistics = ({ team }) => {
       console.error('Ошибка при обновлении наград:', error);
     }
   };
+  
+
+  const clearRewards = async () => {
+    const updatedTeams = teamsData.map((team) => ({
+      ...team,
+      reward: 0, // Обнуляем только гонорар
+    }));
+  
+    setTeamsData(updatedTeams);
+  
+    try {
+      await Promise.all(updatedTeams.map(async (team) => {
+        const response = await axios.post(`${config.apiBaseUrl}/api/teams/clear-reward`, {
+          team: team.username,
+        });
+        console.log(`Гонорар для команды ${team.username} успешно очищен:`, response.data);
+      }));
+    } catch (error) {
+      console.error('Ошибка при очистке гонораров:', error);
+    }
+  };
+  
+// Функция для очистки всех данных
+const clearAllData = async () => {
+  try {
+    const responses = await Promise.all(
+      teamsData.map(async (team) => {
+        const response = await fetch(`${config.apiBaseUrl}/api/teams/clear-all`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ team: team.username }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text(); // Получаем текст ошибки
+          throw new Error(`Error ${response.status}: ${errorData}`);
+        }
+
+        return response.json(); // Возвращаем успешный ответ
+      })
+    );
+
+    console.log('All data cleared successfully:', responses);
+
+    // Обновляем состояние teamsData
+    const updatedTeams = teamsData.map((team) => ({
+      ...team,
+      moves: 0,     // Обнуляем количество ходов
+      points: 0,    // Обнуляем количество очков
+      reward: 0,    // Обнуляем гонорар
+    }));
+    
+    setTeamsData(updatedTeams); // Обновляем состояние
+
+  } catch (error) {
+    console.error('Ошибка при очистке всех данных:', error);
+    setErrorMessage('Ошибка при очистке всех данных');
+  }
+};
+
 
   return (
     <div className="admin-statistics">
@@ -141,19 +201,23 @@ const AdminStatistics = ({ team }) => {
               <td>{team.username}</td>
               <td>{team.moves}</td>
               <td>{team.points}</td>
-              <td>{team.reward ? team.reward.toFixed(2) : '0.00'}</td>
+              <td>{"$"+team.reward ? team.reward.toFixed(2) : '$0.00'}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       {isAdmin && (
-        <button onClick={calculateRewards} className="action-button gon">Рассчитать Гонорар</button>
+        <>
+          <button onClick={calculateRewards} className="action-button gon">Рассчитать Гонорар</button>
+          <button onClick={clearRewards} className="action-button">Очистить Гонорар</button>
+          <button onClick={clearAllData} className="action-button">Очистить Всё</button>
+        </>
       )}
 
       {isAdmin && (
         <>
-          <h3 className='answerComand'>Ответы команд</h3>
+          <h3 className="answerComand">Ответы команд</h3>
           <div className="answers-container">
             {answersData.length > 0 ? (
               answersData.map((answer, index) => (
