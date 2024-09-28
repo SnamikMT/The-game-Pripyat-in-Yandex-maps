@@ -12,42 +12,55 @@ const formatTime = (timeInSeconds) => {
 
 const Game = ({ team, socket }) => {
   const { gameData, setGameData } = useGameContext();
-  const { questions = [], gameStarted, timeLeft, submitted } = gameData; 
+  const { questions = [], gameStarted, timeLeft } = gameData;
   const [answers, setAnswers] = useState({});
   const [activeTeams, setActiveTeams] = useState([]);
-  const [hasSubmitted, setHasSubmitted] = useState(false); 
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  // Проверка, отправлял ли пользователь ответы
+  // Проверка отправки ответов и загрузка статуса из localStorage
   useEffect(() => {
-    const checkIfSubmitted = async () => {
-      try {
-        const response = await axios.get(`${config.apiBaseUrl}/api/check-submission?team=${team.username}`);
-        if (response.data.submitted) {
-          setHasSubmitted(true); 
-          setGameData((prevData) => ({ ...prevData, submitted: true }));
+    const storedSubmission = localStorage.getItem(`hasSubmitted_${team.username}`);
+    if (storedSubmission) {
+      setHasSubmitted(JSON.parse(storedSubmission));
+    } else {
+      const checkIfSubmitted = async () => {
+        try {
+          const response = await axios.get(`${config.apiBaseUrl}/api/check-submission`, { params: { team: team.username } });
+          if (response.data) {
+            setHasSubmitted(true); 
+            localStorage.setItem(`hasSubmitted_${team.username}`, true); // Сохранение в localStorage
+          }
+        } catch (error) {
+          console.log("Ошибка проверки отправки ответов:", error); // Выводим ошибку в консоль
         }
-      } catch (error) {
-        console.error('Ошибка проверки отправки ответов:', error);
-      }
-    };
-  
-    if (team && gameStarted) {
-      checkIfSubmitted();
-    }
-  }, [team, gameStarted, setGameData]);
-  
+      };
 
+      if (team && gameStarted) {
+        checkIfSubmitted();
+      }
+    }
+  }, [team, gameStarted]);
+
+  // После отправки сохраняем статус в localStorage
+  const handleSubmit = () => {
+    socket.emit('submit_answers', { team, answers });
+    setGameData((prevData) => ({ ...prevData, submitted: true }));
+    setHasSubmitted(true);
+    localStorage.setItem(`hasSubmitted_${team.username}`, true); // Сохранение отправки в localStorage
+  };
+
+  // Запрос на получение вопросов
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         const response = await axios.get(`${config.apiBaseUrl}/api/questions`);
-        const questions = response.data.questions || []; 
+        const questions = response.data.questions || [];
         setGameData((prevData) => ({
           ...prevData,
           questions,
         }));
       } catch (error) {
-        console.error('Error fetching questions:', error);
+        console.log('Ошибка получения вопросов:', error); // Сообщение в консоль
       }
     };
 
@@ -89,18 +102,10 @@ const Game = ({ team, socket }) => {
     }));
   };
 
-  // Отправка ответов
-  const handleSubmit = () => {
-    socket.emit('submit_answers', { team, answers });
-    setGameData((prevData) => ({ ...prevData, submitted: true }));
-    setHasSubmitted(true); 
-  };
-
   return (
     <div className="game-container">
-      <h1>Игра для команды: {team?.username || 'Команда не определена'}</h1>
+      <h1>Вопросы для команды: {team?.username || 'Команда не определена'}</h1>
       <div className="active-teams">
-        <h2>Активные команды:</h2>
         <ul>
           {activeTeams.map((activeTeam, index) => (
             <li key={index}>{activeTeam}</li>
@@ -133,7 +138,7 @@ const Game = ({ team, socket }) => {
       </div>
 
       {!hasSubmitted && (
-        <button onClick={handleSubmit} disabled={!gameStarted}>
+        <button onClick={handleSubmit}>
           Отправить ответы
         </button>
       )}

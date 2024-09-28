@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import config from './config';
+import { useContext } from 'react';
+import TimerContext from './TimerContext';
 
-// Форматирование времени в формат "минуты:секунды"
+// Функция для форматирования времени
 const formatTime = (timeInSeconds) => {
-  if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = timeInSeconds % 60;
-  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 };
 
 const Header = ({
@@ -32,7 +33,12 @@ const Header = ({
   const [burgerMenuOpen, setBurgerMenuOpen] = useState(false); // состояние для бургер-меню
   const [isQuestionListVisible, setIsQuestionListVisible] = useState(false);
 
+  const [isQuestionSectionVisible, setIsQuestionSectionVisible] = useState(false);
+  const [isGameSectionVisible, setIsGameSectionVisible] = useState(false);
+
   const navigate = useNavigate();
+
+  const { timerDuration } = useContext(TimerContext);
 
   // Загрузка вопросов при первом рендере
   useEffect(() => {
@@ -48,26 +54,37 @@ const Header = ({
     fetchQuestions();
   }, []);
 
+  useEffect(() => {
+    let interval;
+
+    // Очищаем интервал при завершении игры или размонтировании компонента
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [gameStarted]);
+
+  // Обновление времени через сокет
+  useEffect(() => {
+    socket.on('timer_update', (timeLeft) => {
+      const totalTimeInSeconds = timeLeft.minutes * 60 + timeLeft.seconds;
+      setRemainingTime(totalTimeInSeconds);
+    });
+
+    return () => {
+      socket.off('timer_update');
+    };
+  }, [socket, setRemainingTime]);
+
   // Обработка событий от сокета для начала игры и обновления таймера
   useEffect(() => {
     socket.on('game_started', (questions) => {
       setQuestions(questions);
     });
 
-    socket.on('timer_update', (timeLeft) => {
-      const totalTimeInSeconds = timeLeft.minutes * 60 + timeLeft.seconds;
-      setRemainingTime(totalTimeInSeconds);
-      if (totalTimeInSeconds <= 0) {
-        setRemainingTime(0);
-        alert('Время истекло!');
-      }
-    });
-
     return () => {
       socket.off('game_started');
-      socket.off('timer_update');
     };
-  }, [socket, setQuestions, setRemainingTime]);
+  }, [socket, setQuestions]);
 
   const toggleActions = () => {
     setShowActions(!showActions);
@@ -122,25 +139,45 @@ const Header = ({
         setErrorMessage('Длительность игры должна быть больше 0');
         return;
       }
+      
+      // Очистка всех ключей localStorage, связанных с командами
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('hasSubmitted_')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Очистка вопросов из localStorage
+      localStorage.removeItem('questions');
+
+      // Очищаем ответы на сервере
       await axios.post(`${config.apiBaseUrl}/api/clear-answers`);
+
+      // Старт игры на сервере
       const response = await axios.post(`${config.apiBaseUrl}/api/start-game`, {
         duration: gameDuration * 60,
       });
 
+      // Отправляем событие о старте игры через сокет
       socket.emit('start_game', gameDuration * 60);
+
+      // Получаем вопросы с сервера и сохраняем их
       const serverQuestions = response.data.questions;
       if (serverQuestions && serverQuestions.length > 0) {
+        localStorage.setItem('questions', JSON.stringify(serverQuestions));  // Сохраняем новые вопросы в localStorage
         setLocalQuestions(serverQuestions);
         setQuestions(serverQuestions);
       }
 
-      setGameStarted(true);
+      // Устанавливаем флаги начала игры и время
       setRemainingTime(gameDuration * 60);
+      setGameStarted(true); // Запускаем игру
     } catch (error) {
       setErrorMessage('Ошибка запуска игры');
       console.error('Error starting game:', error);
     }
   };
+
 
   const handleEndGame = async () => {
     try {
@@ -160,7 +197,9 @@ const Header = ({
 
   return (
     <header className="header-container">
-      <span className="timer-text"><span className='Timer'>{formatTime(remainingTime)}</span></span>
+      <span className="timer-text">
+        <span className="Timer">{formatTime(remainingTime)}</span>
+      </span>
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
       
@@ -185,34 +224,35 @@ const Header = ({
 
       {/* Бургер-меню для мобильной версии */}
       <nav className={`burger-nav ${burgerMenuOpen ? 'open' : ''}`}>
-          <ul>
-            <Link to="/categories">
-              <li>Играть</li>
-            </Link>
-            <Link to="/game">
-              <li>Ходы</li>
-            </Link>
-            <Link to="/maps">
-              <li>Карты</li>
-            </Link>
-            <Link to="/statistics">
-              <li>Статистика</li>
-            </Link>
-            {team.role === 'admin' && (
-              <>
-                <Link to="/manage-teams">
-                  <li>Команды</li>
-                </Link>
-                <li>
-                  <button className="his" onClick={handleMoveHistory}>История ходов</button>
-                </li>
-              </>
-            )}
-            <li className='log'>
-              <button onClick={onLogout}>Выход</button>
-            </li>
-          </ul>
-        </nav>
+        <ul>
+          <Link to="/categories" onClick={() => setBurgerMenuOpen(false)}>
+            <li>Играть</li>
+          </Link>
+          <Link to="/game" onClick={() => setBurgerMenuOpen(false)}>
+            <li>Ходы</li>
+          </Link>
+          <Link to="/maps" onClick={() => setBurgerMenuOpen(false)}>
+            <li>Карты</li>
+          </Link>
+          <Link to="/statistics" onClick={() => setBurgerMenuOpen(false)}>
+            <li>Статистика</li>
+          </Link>
+          {team.role === 'admin' && (
+            <>
+              <Link to="/manage-teams" onClick={() => setBurgerMenuOpen(false)}>
+                <li>Команды</li>
+              </Link>
+              <li>
+                <button className="his" onClick={() => { handleMoveHistory(); setBurgerMenuOpen(false); }}>История ходов</button>
+              </li>
+            </>
+          )}
+          <li className='log'>
+            <button onClick={() => { onLogout(); setBurgerMenuOpen(false); }}>Выход</button>
+          </li>
+        </ul>
+      </nav>
+
 
 
       <div className="right-user">
@@ -230,16 +270,23 @@ const Header = ({
             </div>
 
             
-      {team.role === 'admin' && (
-        <div className="floating-action-button">
-          <button onClick={toggleActions} className="round-button">
-            A
-          </button>
-          {showActions && (
-            <div className="popup-actions">
-              <button className="close-button" onClick={toggleActions}>X</button> {/* Кнопка закрытия */}
-              <h1 className='adminpanel' style={{ color: '#272727', textAlign: 'center'}}>Админ панель</h1>
-              <h3>Создать вопрос</h3>
+            {team.role === 'admin' && (
+  <div className="floating-action-button">
+    <button onClick={toggleActions} className="round-button">
+      A
+    </button>
+    {showActions && (
+      <div className="popup-actions">
+        <button className="close-button" onClick={toggleActions}>X</button>
+        <h1 className='adminpanel' style={{ color: '#272727', textAlign: 'center' }}>Админ панель</h1>
+
+        {/* Questions Section */}
+        <div className='quest-section'>
+          <h3 onClick={() => setIsQuestionSectionVisible(!isQuestionSectionVisible)} className="toggle-section-button">
+            {isQuestionSectionVisible ? 'Скрыть вопросы' : 'Показать вопросы'}
+          </h3>
+          {isQuestionSectionVisible && (
+            <div className="question-section">
               <label>Текст Вопроса</label>
               <input
                 className="questinput"
@@ -258,7 +305,7 @@ const Header = ({
               />
               <label className='questbal'>Максимум баллов:</label>
               <input
-              className="questinput"
+                className="questinput"
                 type="number"
                 value={maxScore}
                 onChange={(e) => setMaxScore(e.target.value)}
@@ -285,11 +332,17 @@ const Header = ({
                   </ul>
                 )}
               </div>
+            </div>
+          )}
+        </div>
 
-              <button onClick={handleSendForcedMessage} className="action-button">
-                Отправить игрокам сообщение(Юпитер)
-              </button>
-
+        {/* Game Section */}
+        <div className='game-section'>
+          <h3 onClick={() => setIsGameSectionVisible(!isGameSectionVisible)} className="toggle-section-button">
+            {isGameSectionVisible ? 'Скрыть игру' : 'Показать игру'}
+          </h3>
+          {isGameSectionVisible && (
+            <div className="game-section">
               <label className='min'>Длительность игры в (Минутах):</label>
               <input
                 className='minut'
@@ -297,13 +350,20 @@ const Header = ({
                 value={gameDuration}
                 onChange={(e) => setGameDuration(Number(e.target.value))}
               />
-
               <button onClick={handleStartGame} className="action-button">Запустить игру</button>
               <button onClick={handleEndGame} className="action-button">Завершить игру</button>
             </div>
           )}
         </div>
-      )}
+
+        <button onClick={handleSendForcedMessage} className="action-button">
+          Отправить игрокам сообщение(Юпитер)
+        </button>
+      </div>
+    )}
+  </div>
+)}
+
     </header>
   );
 };

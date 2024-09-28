@@ -6,6 +6,11 @@ const Questions = ({ questions }) => {
     return storedState ? JSON.parse(storedState) : {};
   });
 
+  const [isSubmitted, setIsSubmitted] = useState(() => {
+    const storedSubmission = localStorage.getItem('isSubmitted');
+    return storedSubmission === 'true'; // Преобразуем в boolean
+  });
+
   const toggleQuestion = (index) => {
     setExpandedQuestions((prevState) => {
       const newState = { ...prevState, [index]: !prevState[index] };
@@ -13,6 +18,20 @@ const Questions = ({ questions }) => {
       return newState;
     });
   };
+
+  const handleSubmit = () => {
+    // Логика отправки ответов на сервер или другую обработку
+    setIsSubmitted(true);
+    localStorage.setItem('isSubmitted', 'true');
+  };
+
+  useEffect(() => {
+    // Здесь может быть логика проверки отправленных данных с сервера
+  }, []);
+
+  if (isSubmitted) {
+    return <p>Ваши ответы успешно отправлены!</p>;
+  }
 
   return (
     <div>
@@ -24,6 +43,7 @@ const Questions = ({ questions }) => {
           {expandedQuestions[index] && <p>{question.content}</p>}
         </div>
       ))}
+      <button onClick={handleSubmit}>Отправить ответы</button>
     </div>
   );
 };

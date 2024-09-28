@@ -19,6 +19,7 @@ import MoveHistory from './components/MoveHistory';
 import { GameProvider } from './components/GameContext';
 import MessagePopup from './components/MessagePopup';
 import config from './components/config';
+import { TimerProvider } from './components/TimerContext';
 
 const socket = io(config.socketUrl);
 
@@ -46,12 +47,11 @@ const App = () => {
     fetchQuestions();
   }, []);
 
-  // Timer setup when game starts
   useEffect(() => {
-    if (gameStarted) {
+    if (gameStarted && remainingTime > 0) {
       const timerInterval = setInterval(() => {
         setRemainingTime((prevTime) => {
-          if (prevTime <= 0) {
+          if (prevTime <= 1) {
             clearInterval(timerInterval);
             setGameEnded(true);
             setGameStarted(false);
@@ -60,10 +60,10 @@ const App = () => {
           return prevTime - 1;
         });
       }, 1000);
-
+  
       return () => clearInterval(timerInterval);
     }
-  }, [gameStarted]);
+  }, [gameStarted, remainingTime]); // добавлено remainingTime
 
   // Fetch team and answers data
   useEffect(() => {
@@ -242,6 +242,7 @@ const App = () => {
   };
 
   return (
+    <TimerProvider socket={socket}>
     <Router>
       {isAuthenticated ? (
         <>
@@ -318,6 +319,7 @@ const App = () => {
         <Login onLogin={handleLogin} />
       )}
     </Router>
+    </TimerProvider>
   );  
 };
 

@@ -8,7 +8,7 @@ const path = require("path");
 const multer = require('multer');
 const { updateMoves } = require('./moves');
 const { getTeamsData, recordTeamMove } = require('./teamsController');
-const fss = require('fs').promises; // Используем промисы
+const fss = require('fs').promises;
 
 require('dotenv').config();
 
@@ -26,6 +26,12 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Что-то пошло не так!' });
+});
+
 
 const io = socketIo(server, {
   cors: {
@@ -74,21 +80,135 @@ async function writeTeamsFile(data) {
   }
 }
 
-// Создаем хранилище для файлов с помощью multer
+
+// Чтение данных из файла answers.json
+const getAnswers = () => {
+  const filePath = path.join(__dirname, 'data', 'answers.json'); // Обязательно проверь правильность пути к файлу
+  const fileData = fs.readFileSync(filePath, 'utf8');
+  return JSON.parse(fileData); // Парсинг JSON-данных
+};
+
+
+// Set up multer for file uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Указываем папку для хранения файлов
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Ensure this directory exists
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9); // Уникальное имя файла с меткой времени и случайным числом
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // Добавляем расширение файла
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // Append timestamp to the filename
   }
 });
 
-const upload = multer({ storage: storage }); // Используем настроенное хранилище
+const upload = multer({ storage: storage });
 
 // Статическая папка для доступа к загруженным изображениям
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// PUT запрос для обновления блока по первой букве категории
+app.put('/api/blocks/:category/:blockNumber', async (req, res) => {
+  try {
+    const { category, blockNumber } = req.params; // Принимаем категорию и номер блока из параметров URL
+    const updatedBlock = req.body; // Остальные данные для обновления из тела запроса
+
+    // Чтение данных из blocksData.json
+    const blocksData = await fs.promises.readFile(blocksDataFilePath, 'utf-8');
+    const blocks = JSON.parse(blocksData);
+
+    console.log('Категория (первая буква):', category[0]);
+    console.log('Номер блока:', blockNumber);
+
+    // Поиск нужной категории по первой букве
+    const categoryData = blocks.find(cat => cat.category.startsWith(category[0]));
+    if (!categoryData) {
+      return res.status(404).json({ message: 'Категория не найдена' });
+    }
+
+    const block = categoryData.blocks.find(b => b.number === parseInt(blockNumber));
+    if (!block) {
+      return res.status(404).json({ message: 'Блок не найден' });
+    }
+
+    console.log('Данные для обновления:', updatedBlock);
+
+    // Обновление данных блока
+    Object.assign(block, updatedBlock);
+
+    // Сохранение обновленных данных
+    await fs.promises.writeFile(blocksDataFilePath, JSON.stringify(blocks, null, 2));
+
+    res.json({ message: 'Block successfully updated' });
+  } catch (error) {
+    console.error('Ошибка обновления блока:', error);
+    res.status(500).json({ message: 'Ошибка обновления блока' });
+  }
+});
+
+
+
+// Endpoint to upload files
+app.post('/api/upload', upload.fields([{ name: 'image' }, { name: 'secondImage' }, { name: 'voiceMessage' }]), (req, res) => {
+  const uploadedFiles = {};
+  
+  if (req.files['image']) {
+    uploadedFiles.imageUrl = `/uploads/${req.files['image'][0].filename}`;
+  }
+  if (req.files['secondImage']) {
+    uploadedFiles.image2Url = `/uploads/${req.files['secondImage'][0].filename}`;
+  }
+  if (req.files['voiceMessage']) {
+    uploadedFiles.voiceMessageUrl = `/uploads/${req.files['voiceMessage'][0].filename}`;
+  }
+  
+  res.json(uploadedFiles);
+});
+
+app.delete('/api/delete-file', async (req, res) => {
+  const { fileName, category, blockNumber } = req.body; // Получаем имя файла, категорию и номер блока
+
+  const filePath = path.join(__dirname, 'uploads', fileName);
+
+  // Удаляем файл
+  fs.unlink(filePath, async (err) => {
+    if (err) {
+      console.error('Ошибка удаления файла:', err);
+      return res.status(500).json({ message: 'Ошибка удаления файла' });
+    }
+
+    // Обновляем blocksData.json
+    const blocksData = await fs.promises.readFile(blocksDataFilePath, 'utf-8');
+    const blocks = JSON.parse(blocksData);
+
+    // Поиск нужной категории по первой букве
+    const categoryData = blocks.find(cat => cat.category.startsWith(category[0]));
+    if (!categoryData) {
+      return res.status(404).json({ message: 'Категория не найдена' });
+    }
+
+    // Поиск нужного блока
+    const block = categoryData.blocks.find(b => b.number === parseInt(blockNumber));
+    if (!block) {
+      return res.status(404).json({ message: 'Блок не найден' });
+    }
+
+    // Удаляем ссылку на файл
+    if (block.imageUrl.endsWith(fileName)) {
+      block.imageUrl = ""; // или null, в зависимости от вашего формата
+    }
+    if (block.image2Url.endsWith(fileName)) {
+      block.image2Url = ""; // или null
+    }
+
+    if (block.voiceMessageUrl.endsWith(fileName)) {
+      block.voiceMessageUrl = ""; // или null
+    }
+
+    // Сохраняем обновленные данные
+    await fs.promises.writeFile(blocksDataFilePath, JSON.stringify(blocks, null, 2));
+
+    res.json({ message: 'Файл и соответствующая ссылка успешно удалены' });
+  });
+});
+
 
 // Функция для загрузки и обработки данных ответов
 function loadAnswers() {
@@ -247,48 +367,6 @@ loadUsers();
 loadAnswers();
 
 
-app.put('/api/blocks/:category/:blockNumber', upload.single('image'), (req, res) => {
-  const { category, blockNumber } = req.params;
-  const { title, description, showDocumentIcon, showVoiceMessageIcon } = req.body;
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-
-  readJsonFile(blocksDataFilePath).then((blocksData) => {
-    const categoryData = blocksData.find(c => c.category === category);
-    if (!categoryData) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-
-    const block = categoryData.blocks.find(b => b.number === parseInt(blockNumber));
-    if (!block) {
-      return res.status(404).json({ message: 'Block not found' });
-    }
-
-    // Удаление старого изображения, если оно заменяется
-    if (block.imageUrl && imageUrl && block.imageUrl !== imageUrl) {
-      const oldImagePath = path.join(__dirname, 'uploads', path.basename(block.imageUrl));
-      fs.unlink(oldImagePath, (err) => {
-        if (err && err.code !== 'ENOENT') {
-          console.error('Error deleting old image:', err);
-        }
-      });
-    }
-
-    // Обновляем блок данными
-    block.title = title || block.title;
-    block.description = description || block.description;
-    block.imageUrl = imageUrl || block.imageUrl; // Если нет нового изображения, сохраняем старое
-    block.showDocumentIcon = showDocumentIcon === 'true'; // Сохраняем статус галочки
-    block.showVoiceMessageIcon = showVoiceMessageIcon === 'true'; // Сохраняем статус галочки
-
-    writeJsonFile(blocksDataFilePath, blocksData)
-      .then(() => res.json({ message: 'Block successfully updated', imageUrl }))
-      .catch((err) => res.status(500).json({ message: 'Error saving block data' }));
-  }).catch((err) => {
-    console.error('Error reading blocks data:', err);
-    res.status(500).json({ message: 'Error reading blocks data' });
-  });
-});
-
 // Маршрут для записи действия по категории
 app.post('/api/category-action', async (req, res) => {
   const { teamName, category } = req.body;
@@ -393,66 +471,6 @@ app.get('/api/blocks', (req, res) => {
   });
 });
 
-app.put('/api/blocks/:category/:number', upload.fields([{ name: 'image' }, { name: 'image2' }, { name: 'voiceMessage' }]), async (req, res) => {
-  const { category, number } = req.params;
-  const { title, description } = req.body;
-  const image = req.files['image'] ? req.files['image'][0] : null;
-  const image2 = req.files['image2'] ? req.files['image2'][0] : null;
-  const voiceMessage = req.files['voiceMessage'] ? req.files['voiceMessage'][0] : null;
-
-  try {
-    const data = await fs.promises.readFile('./data/blocks.json', 'utf8');
-    const blocksData = JSON.parse(data);
-
-    const categoryData = blocksData.find((cat) => cat.category === category);
-    if (!categoryData) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-
-    const block = categoryData.blocks.find((block) => block.number === parseInt(number));
-    if (!block) {
-      return res.status(404).json({ message: 'Block not found' });
-    }
-
-    // Обновляем данные блока
-    block.title = title;
-    block.description = description;
-
-    // Обрабатываем первое изображение
-    if (image) {
-      const imagePath = path.join('uploads', image.filename + path.extname(image.originalname));
-      await fs.promises.rename(image.path, imagePath);
-      block.imageUrl = `${req.protocol}://${req.get('host')}/${imagePath}`;
-    }
-
-    // Обрабатываем второе изображение
-    if (image2) {
-      const image2Path = path.join('uploads', image2.filename + path.extname(image2.originalname));
-      await fs.promises.rename(image2.path, image2Path);
-      block.image2Url = `${req.protocol}://${req.get('host')}/${image2Path}`;
-    }
-
-    // Обрабатываем голосовое сообщение
-    if (voiceMessage) {
-      const voiceMessagePath = path.join('uploads', voiceMessage.filename + path.extname(voiceMessage.originalname));
-      await fs.promises.rename(voiceMessage.path, voiceMessagePath);
-      block.voiceMessageUrl = `${req.protocol}://${req.get('host')}/${voiceMessagePath}`;
-    }
-
-    // Сохраняем обновленные данные
-    await fs.promises.writeFile('./data/blocks.json', JSON.stringify(blocksData, null, 2));
-
-    res.json({ 
-      message: 'Block successfully updated', 
-      imageUrl: block.imageUrl, 
-      image2Url: block.image2Url,
-      voiceMessageUrl: block.voiceMessageUrl 
-    });
-  } catch (err) {
-    console.error('Error processing block update:', err);
-    res.status(500).json({ error: 'Error updating block' });
-  }
-});
 
 // Логика добавления пользователей в команды, если они не скрыты и являются user
 const addTeamsFromUsers = async () => {
@@ -646,6 +664,28 @@ app.post('/api/update-moves', async (req, res) => {
   const result = await updateMoves(teamName);
   res.json(result);
 });
+
+app.get('/api/check-submission', (req, res) => {
+  const { team } = req.query; // Получаем команду из параметров запроса
+  if (!team) {
+    return res.status(400).json({ message: 'Team is required' });
+  }
+
+  try {
+    const answers = getAnswers(); // Чтение всех данных из файла
+    const teamData = answers.find((entry) => entry.team === team); // Поиск данных по команде
+
+    if (teamData) {
+      res.json(teamData); // Возвращаем данные для команды
+    } else {
+      res.status(404).json({ message: 'Team not found' });
+    }
+  } catch (error) {
+    console.error('Error reading answers:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 app.post('/api/answers', (req, res) => {
   const { team, answers } = req.body;
@@ -1048,26 +1088,23 @@ app.post('/api/teams/admin/scores', async (req, res) => {
 });
 
 
-// API для проверки, отправлены ли ответы
-app.get('/api/check-submission', async (req, res) => {
-  const { team } = req.query;
+// Пример кода на сервере (Node.js)
+app.post('/api/submit-answers', async (req, res) => {
+  const { teamName, answers } = req.body;
 
-  try {
-    let answersData = await fs.promises.readFile(answersFilePath, 'utf-8');
-    answersData = answersData ? JSON.parse(answersData) : [];
+  // Логика сохранения ответов
+  const team = await findTeamByName(teamName);
+  if (!team) return res.status(400).send('Команда не найдена');
 
-    const teamAnswers = answersData.find((entry) => entry.team === team);
+  // Добавление статуса отправки ответов
+  team.answersSubmitted = true;
+  team.answers = answers;
 
-    if (teamAnswers) {
-      res.json({ submitted: true });
-    } else {
-      res.json({ submitted: false });
-    }
-  } catch (error) {
-    console.error('Ошибка при проверке ответов:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
-  }
+  await saveTeamData(team);
+
+  res.send({ message: 'Ответы успешно отправлены' });
 });
+
 
 
 // Функция для сохранения пользователей в файл

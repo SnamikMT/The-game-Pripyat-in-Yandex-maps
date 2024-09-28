@@ -7,12 +7,27 @@
     "answers": [],
     "reward": 0,
     "points": 0,
-    "moves": 1,
+    "moves": 0,
     "history": [
       {
-        "blockNumber": 3,
-        "category": "Б (предметы)",
-        "timestamp": "2024-09-26T21:39:32.586Z"
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-28T15:46:17.534Z"
+      },
+      {
+        "blockNumber": 12,
+        "category": "А (люди)",
+        "timestamp": "2024-09-28T15:46:41.449Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-28T15:54:51.054Z"
+      },
+      {
+        "blockNumber": 1,
+        "category": "А (люди)",
+        "timestamp": "2024-09-28T16:03:37.499Z"
       }
     ]
   }

@@ -26,7 +26,7 @@ const Maps = () => {
         console.log("API поддерживает данный браузер.");
 
         // Получение объекта панорамы
-        window.ymaps.panorama.locate([55.751244, 37.618423]).then(
+        window.ymaps.panorama.locate([51.405269, 30.053668]).then(
           function (panoramas) {
             if (panoramas.length) {
               console.log("Ура, нашлась панорама.");

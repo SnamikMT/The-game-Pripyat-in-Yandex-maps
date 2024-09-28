@@ -155,6 +155,35 @@
   margin-top: 5px;
 }
 
+.question-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.quest-section {
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toggle-section-button {
+  width: 100%;
+  background-color: #ffeb99;
+  border-radius: 5px;
+  padding-bottom: 10px;
+  padding-top: 10px;
+}
+
+.game-section {
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 15px;
+}
+
 /* Скрыть бургер-меню на десктопе */
 @media (min-width: 768px) {
   .burger-menu {
@@ -194,6 +223,10 @@
 
   .minut {
     width: 25%;
+  }
+
+  .message-popup {
+    width: 75%;
   }
 }
 
@@ -943,4 +976,11 @@ h2, h3 {
 
 .users {
   font-size: 25px
+}
+
+.categoryHead {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 }

@@ -236,7 +236,7 @@ const clearAllData = async () => {
 
                       return (
                         <li key={`question-${answer.team}-${qIndex}`}>
-                          <strong>{questionText}:</strong> {ans} (Диапазон баллов: {minScore} - {maxScore})
+                          <strong>{questionText}:</strong> <h4 className='ans'>{ans}</h4> (Диапазон баллов: {minScore} - {maxScore})
                           <div className="score-input">
                             <label htmlFor={`score-${answer.team}-${qIndex}`}>Балл:</label>
                             <input
