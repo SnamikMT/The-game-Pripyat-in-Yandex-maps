@@ -201,7 +201,7 @@ const clearAllData = async () => {
               <td>{team.username}</td>
               <td>{team.moves}</td>
               <td>{team.points}</td>
-              <td>{"$"+team.reward ? team.reward.toFixed(2) : '$0.00'}</td>
+              <td>{"$" + (team.reward ? team.reward.toFixed(2) : '0.00')}</td>
             </tr>
           ))}
         </tbody>
