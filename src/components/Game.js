@@ -28,10 +28,10 @@ const Game = ({ team, socket }) => {
           const response = await axios.get(`${config.apiBaseUrl}/api/check-submission`, { params: { team: team.username } });
           if (response.data) {
             setHasSubmitted(true); 
-            localStorage.setItem(`hasSubmitted_${team.username}`, true); // Сохранение в localStorage
+            localStorage.setItem(`hasSubmitted_${team.username}`, true);
           }
         } catch (error) {
-          console.log("Ошибка проверки отправки ответов:", error); // Выводим ошибку в консоль
+          console.log("Ошибка проверки отправки ответов:", error);
         }
       };
 
@@ -41,12 +41,30 @@ const Game = ({ team, socket }) => {
     }
   }, [team, gameStarted]);
 
+  // Загрузка сохранённых ответов из localStorage при загрузке компонента
+  useEffect(() => {
+    const storedAnswers = localStorage.getItem(`answers_${team.username}`);
+    if (storedAnswers) {
+      setAnswers(JSON.parse(storedAnswers));
+    }
+  }, [team.username]);
+
+  // Сохранение ответов в localStorage при их изменении
+  const handleAnswerChange = (index, value) => {
+    setAnswers((prevAnswers) => {
+      const updatedAnswers = { ...prevAnswers, [index]: value };
+      localStorage.setItem(`answers_${team.username}`, JSON.stringify(updatedAnswers)); // Сохраняем в localStorage
+      return updatedAnswers;
+    });
+  };
+
   // После отправки сохраняем статус в localStorage
   const handleSubmit = () => {
     socket.emit('submit_answers', { team, answers });
     setGameData((prevData) => ({ ...prevData, submitted: true }));
     setHasSubmitted(true);
-    localStorage.setItem(`hasSubmitted_${team.username}`, true); // Сохранение отправки в localStorage
+    localStorage.setItem(`hasSubmitted_${team.username}`, true);
+    localStorage.removeItem(`answers_${team.username}`); // Удаляем ответы из localStorage после отправки
   };
 
   // Запрос на получение вопросов
@@ -60,7 +78,7 @@ const Game = ({ team, socket }) => {
           questions,
         }));
       } catch (error) {
-        console.log('Ошибка получения вопросов:', error); // Сообщение в консоль
+        console.log('Ошибка получения вопросов:', error);
       }
     };
 
@@ -93,14 +111,6 @@ const Game = ({ team, socket }) => {
       socket.off('update_teams');
     };
   }, [socket, setGameData]);
-
-  // Обработка изменения ответов
-  const handleAnswerChange = (index, value) => {
-    setAnswers((prevAnswers) => ({
-      ...prevAnswers,
-      [index]: value,
-    }));
-  };
 
   return (
     <div className="game-container">

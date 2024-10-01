@@ -984,3 +984,8 @@ h2, h3 {
   justify-content: center;
   align-items: center;
 }
+
+.ans {
+  font-size: 25px;
+  color: #ffffff;
+}
