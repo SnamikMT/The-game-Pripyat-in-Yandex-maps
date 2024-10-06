@@ -106,6 +106,7 @@ const Header = ({
   };
 
   const handleMoveHistory = () => {
+    setBurgerMenuOpen(false)
     navigate('/move-history');
   };
 
@@ -328,7 +329,7 @@ const Header = ({
           {team.role === 'admin' && (
             <>
               <li>
-                <Link to="/manage-teams" className="link-button">
+                <Link to="/manage-teams" onClick={() => setBurgerMenuOpen(false)} className="link-button">
                   Команды
                 </Link>
               </li>
@@ -338,7 +339,7 @@ const Header = ({
                 </button>
               </li>
               <li>
-                <Link to="/statistics" className="link-button">
+                <Link to="/statistics" onClick={() => setBurgerMenuOpen(false)} className="link-button">
                   Статистика
                 </Link>
               </li>

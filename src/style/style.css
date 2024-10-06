@@ -114,7 +114,7 @@
 .burger-nav.open {
   display: block; /* Отображать бургер-меню, когда оно открыто */
   position: absolute;
-  top: 90px; /* Задайте значение, чтобы разместить меню под заголовком */
+  top: 100%; /* Задайте значение, чтобы разместить меню под заголовком */
   left: 0;
   background-color: #333;
   width: 100%;
@@ -122,8 +122,10 @@
 }
 
 .burger-nav ul {
+  display: flex;
   list-style: none;
   padding: 0;
+  align-items: center;
 }
 
 .burger-nav ul li {

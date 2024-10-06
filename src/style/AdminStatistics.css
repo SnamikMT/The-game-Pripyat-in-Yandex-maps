@@ -32,6 +32,10 @@ h2, h3 {
   color: white; /* Белый текст для таблицы */
 }
 
+.team-item{
+  height: auto;
+}
+
 .answers-container {
   width: 100%;
   max-width: 800px; /* Ограничение ширины контейнера */
