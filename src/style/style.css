@@ -157,6 +157,11 @@
   justify-content: center;
 }
 
+.question-list li {
+  width: 100%;
+  height: auto;
+}
+
 .right-user {
   margin-left: auto;
   display: flex;
