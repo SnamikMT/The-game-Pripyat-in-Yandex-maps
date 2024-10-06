@@ -20,6 +20,7 @@ import { GameProvider } from './components/GameContext';
 import MessagePopup from './components/MessagePopup';
 import config from './components/config';
 import { TimerProvider } from './components/TimerContext';
+import TeamHistoryCard from './components/TeamHistoryCard'; // Adjust the path as necessary
 
 const socket = io(config.socketUrl);
 
@@ -148,6 +149,37 @@ const App = () => {
     };
   }, []);
 
+  useEffect(() => {
+    socket.on('game_ended', () => {
+      setRemainingTime(0); // Обнуляем таймер
+      setGameEnded(true);  // Показываем сообщение о завершении игры
+      localStorage.setItem('gameEnded', 'true');  // Сохраняем состояние в localStorage
+    });
+  
+    return () => {
+      socket.off('game_ended');
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    const gameEndedStatus = localStorage.getItem('gameEnded');
+    if (gameEndedStatus === 'true') {
+      setGameEnded(true);
+      setRemainingTime(0); // Обнуляем таймер
+    }
+  }, []);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      setIsAuthenticated(true);
+      setTeam(userData);
+      socket.emit("team_connected", userData); // Восстановление подключения команды через сокет
+    }
+  }, []);
+  
+
   // Handle login
   const handleLogin = (credentials) => {
     if (credentials) {
@@ -164,10 +196,11 @@ const App = () => {
     if (team) {
       socket.emit("team_disconnected", team.username);
     }
+    localStorage.removeItem("user"); // Удаляем данные пользователя
     setIsAuthenticated(false);
     setTeam(null);
   };
-
+  
   // Handle joining the game
   const handleJoinGame = async () => {
     const teamName = team?.username;
@@ -191,23 +224,31 @@ const App = () => {
       const response = await axios.post(`${config.apiBaseUrl}/api/start-game`);
       setGameStarted(true);
       setRemainingTime(response.data.duration);
+  
+      // Отправляем информацию всем клиентам
+      socket.emit('update_game_status', { started: true, remainingTime: response.data.duration });
+  
       console.log("Игра началась успешно.");
     } catch (error) {
       console.error("Ошибка при старте игры:", error.response?.data || error.message);
     }
   };
-
-  // Handle ending the game
+  
   const handleEndGame = async () => {
     try {
       await axios.post(`${config.apiBaseUrl}/api/end-game`);
       setGameStarted(false);
       setGameEnded(true);
+  
+      // Отправляем информацию всем клиентам
+      socket.emit('update_game_status', { started: false });
+  
       console.log("Игра завершена.");
     } catch (error) {
       console.error("Ошибка при завершении игры:", error.response?.data || error.message);
     }
   };
+  
 
   // Handle calculating reward
   const handleCalculateReward = () => {
@@ -240,87 +281,89 @@ const App = () => {
   const closePopup = () => {
     setMessage(null);
   };
+  
 
   return (
     <TimerProvider socket={socket}>
-    <Router>
-      {isAuthenticated ? (
-        <>
-          <Header
-            team={team}
-            onLogout={handleLogout}
-            onStartGame={handleStartGame}
-            onEndGame={handleEndGame}
-            onCalculateReward={handleCalculateReward}
-            gameStarted={gameStarted}
-            setGameStarted={setGameStarted}
-            setGameEnded={setGameEnded}
-            setRemainingTime={setRemainingTime}
-            setQuestions={setQuestions}
-            socket={socket}
-            onPrepare={handlePrepare}
-            remainingTime={remainingTime}
-          />
-  
-          <div className="App">
-            <GameProvider>
-              <Routes>
-                <Route path="/categories" element={<Categories team={team} />} />
-                <Route path="/options" element={<TeamOptions />} />
-                <Route
-                  path="/questions"
-                  element={<Questions team={team} gameStarted={gameStarted} questions={questions} />}
-                />
-                <Route path="/results" element={<Results />} />
-                <Route path="/maps" element={<Maps />} />
-                <Route
-                  path="/game"
-                  element={
-                    <Game
-                      team={team}
-                      gameStarted={gameStarted}
-                      remainingTime={remainingTime}
-                      formatTime={formatTime}
-                      socket={socket}
-                      onJoinGame={handleJoinGame}
-                    />
-                  }
-                />
-                <Route
-                  path="/statistics"
-                  element={
-                    <AdminStatistics
-                      gameEnded={gameEnded}
-                      remainingTime={remainingTime}
-                      formatTime={formatTime}
-                      teamsData={teamsData}
-                      answersData={answersData}
-                      team={team}
-                    />
-                  }
-                />
-                {team?.role === "admin" && (
-                  <>
-                    <Route path="/add-team" element={<AddTeam />} />
-                    <Route path="/manage-teams" element={<ManageTeams />} />
-                    <Route path="/progress" element={<Progress teamsData={teamsData} />} />
-                    <Route path="/move-history" element={<MoveHistory />} />
-                    <Route path="/add-question" element={<AddQuestion />} />
-                  </>
-                )}
-                <Route path="*" element={<Navigate to="/game" />} />
-              </Routes>
-            </GameProvider>
-          </div>
-  
-          {message && <MessagePopup message={{ time: "11:55", text: message }} onClose={closePopup} />}
-        </>
-      ) : (
-        <Login onLogin={handleLogin} />
-      )}
-    </Router>
+      <Router>
+        {isAuthenticated ? (
+          <>
+            <Header
+              team={team}
+              onLogout={handleLogout}
+              onStartGame={handleStartGame}
+              onEndGame={handleEndGame}
+              onCalculateReward={handleCalculateReward}
+              gameStarted={gameStarted}
+              setGameStarted={setGameStarted}
+              setGameEnded={setGameEnded}
+              setRemainingTime={setRemainingTime}
+              setQuestions={setQuestions}
+              socket={socket}
+              onPrepare={handlePrepare}
+              remainingTime={remainingTime}
+            />
+
+
+            <div className="App">
+              <GameProvider>
+                <Routes>
+                  <Route path="/categories" element={<Categories team={team} />} />
+                  <Route path="/options" element={<TeamOptions />} />
+                  <Route
+                    path="/game"
+                    element={
+                      <Game
+                        team={team}
+                        gameStarted={gameStarted}
+                        remainingTime={remainingTime}
+                        formatTime={formatTime}
+                        socket={socket}
+                        onJoinGame={handleJoinGame}
+                      />
+                    }
+                  />
+                  <Route
+                    path="/questions"
+                    element={<Questions team={team} gameStarted={gameStarted} questions={questions} />}
+                  />
+                  <Route path="/results" element={<Results />} />
+                  <Route path="/maps" element={<Maps />} />
+                  <Route
+                    path="/statistics"
+                    element={
+                      <AdminStatistics
+                        gameEnded={gameEnded}
+                        remainingTime={remainingTime}
+                        formatTime={formatTime}
+                        teamsData={teamsData}
+                        answersData={answersData}
+                        team={team}
+                      />
+                    }
+                  />
+                  {team?.role === "admin" && (
+                    <>
+                      <Route path="/add-team" element={<AddTeam />} />
+                      <Route path="/manage-teams" element={<ManageTeams />} />
+                      <Route path="/progress" element={<Progress teamsData={teamsData} />} />
+                      <Route path="/move-history" element={<MoveHistory />} />
+                      <Route path="/add-question" element={<AddQuestion />} />
+                    </>
+                  )}
+                  <Route path="*" element={<Navigate to={team?.role === 'admin' ? "/manage-teams" : "/categories"} />} />
+                </Routes>
+              </GameProvider>
+            </div>
+
+            {message && <MessagePopup message={{ time: "СООБЩЕНИЕ", text: message.replace(/\n/g, "<br />") }} onClose={closePopup} />}
+          </>
+        ) : (
+          <Login onLogin={handleLogin} />
+        )}
+      </Router>
     </TimerProvider>
-  );  
+  );
 };
 
 export default App;

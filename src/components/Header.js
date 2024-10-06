@@ -3,14 +3,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import config from './config';
 import { useContext } from 'react';
+import { useGameContext } from './GameContext';
 import TimerContext from './TimerContext';
 
 // Функция для форматирования времени
 const formatTime = (timeInSeconds) => {
+  // Если timeInSeconds не является числом или отрицательное
+  if (isNaN(timeInSeconds) || timeInSeconds < 0) {
+    return "0:00";
+  }
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = timeInSeconds % 60;
   return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 };
+
+
 
 const Header = ({
   team,
@@ -40,6 +47,7 @@ const Header = ({
 
   const { timerDuration } = useContext(TimerContext);
 
+
   // Загрузка вопросов при первом рендере
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -66,25 +74,32 @@ const Header = ({
   // Обновление времени через сокет
   useEffect(() => {
     socket.on('timer_update', (timeLeft) => {
-      const totalTimeInSeconds = timeLeft.minutes * 60 + timeLeft.seconds;
-      setRemainingTime(totalTimeInSeconds);
+      if (timeLeft && !isNaN(timeLeft.minutes) && !isNaN(timeLeft.seconds)) {
+        const totalTimeInSeconds = timeLeft.minutes * 60 + timeLeft.seconds;
+        setRemainingTime(totalTimeInSeconds);
+      } else {
+        setRemainingTime(0);  // дефолтное значение при ошибке
+      }
     });
-
+  
     return () => {
       socket.off('timer_update');
     };
   }, [socket, setRemainingTime]);
+  
+  
 
   // Обработка событий от сокета для начала игры и обновления таймера
   useEffect(() => {
     socket.on('game_started', (questions) => {
       setQuestions(questions);
     });
-
+  
     return () => {
       socket.off('game_started');
     };
-  }, [socket, setQuestions]);
+  }, [socket, setQuestions]);  
+
 
   const toggleActions = () => {
     setShowActions(!showActions);
@@ -126,12 +141,17 @@ const Header = ({
       console.error('Error deleting question:', error);
     }
   };
+  
 
   const handleSendForcedMessage = () => {
-    const forcedMessage = `\nНа улице к вам подошел мужчина средних лет, представился другом и произнес:\n- Меня просили передать, что ищут с вами встречи, есть тут у нас один чудик, в свое время работал на "Юпитере", он-то вас и ждет, говорит, у него для вас интересная информация.\n- А где его найти-то, - спрашиваете вы?\n- Да "на работе" и найти. Где ж ему быть. На то он и Паша "Юпитер".`;
-
+    const forcedMessage = `На улице к вам подошел мужчина средних лет, представился другом и произнес:\n
+  - Меня просили передать, что ищут с вами встречи, есть тут у нас один чудик, в свое время работал на "Юпитере", он-то вас и ждет, говорит, у него для вас интересная информация.\n
+  - А где его найти-то, - спрашиваете вы?\n
+  - Да "на работе" и найти. Где ж ему быть. На то он и Паша "Юпитер".`;
+  
     socket.emit('force_message', forcedMessage);
   };
+  
 
   const handleStartGame = async () => {
     try {
@@ -139,57 +159,59 @@ const Header = ({
         setErrorMessage('Длительность игры должна быть больше 0');
         return;
       }
-      
-      // Очистка всех ключей localStorage, связанных с командами
+  
+      // Очистка предыдущих данных
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('hasSubmitted_')) {
           localStorage.removeItem(key);
         }
       });
-
-      // Очистка вопросов из localStorage
       localStorage.removeItem('questions');
-
-      // Очищаем ответы на сервере
+  
+      // Очистка ответов на сервере
       await axios.post(`${config.apiBaseUrl}/api/clear-answers`);
-
-      // Старт игры на сервере
+  
+      // Запуск игры на сервере
       const response = await axios.post(`${config.apiBaseUrl}/api/start-game`, {
         duration: gameDuration * 60,
       });
-
-      // Отправляем событие о старте игры через сокет
+  
+      // Эмитирование старта игры через сокет
       socket.emit('start_game', gameDuration * 60);
-
-      // Получаем вопросы с сервера и сохраняем их
+  
+      // Загрузка вопросов с сервера
       const serverQuestions = response.data.questions;
       if (serverQuestions && serverQuestions.length > 0) {
-        localStorage.setItem('questions', JSON.stringify(serverQuestions));  // Сохраняем новые вопросы в localStorage
+        localStorage.setItem('questions', JSON.stringify(serverQuestions));
         setLocalQuestions(serverQuestions);
         setQuestions(serverQuestions);
       }
-
-      // Устанавливаем флаги начала игры и время
+  
       setRemainingTime(gameDuration * 60);
-      setGameStarted(true); // Запускаем игру
+      setGameStarted(true);
     } catch (error) {
       setErrorMessage('Ошибка запуска игры');
-      console.error('Error starting game:', error);
     }
   };
-
+  
 
   const handleEndGame = async () => {
     try {
       await axios.post(`${config.apiBaseUrl}/api/end-game`);
       setGameEnded(true);
       setGameStarted(false);
-      socket.emit('game_ended');
+      setRemainingTime(0);
+      setQuestions([]);
+      localStorage.removeItem('questions');
+  
+      socket.emit('game_ended', { gameEnded: true });
+  
+      localStorage.setItem('gameEnded', 'true');
     } catch (error) {
       setErrorMessage('Ошибка завершения игры');
-      console.error('Error ending game:', error);
     }
   };
+  
 
   const toggleBurgerMenu = () => {
     setBurgerMenuOpen(!burgerMenuOpen);
@@ -201,20 +223,63 @@ const Header = ({
         <span className="Timer">{formatTime(remainingTime)}</span>
       </span>
       {errorMessage && <p className="error-message">{errorMessage}</p>}
-
       
 
       {/* Стандартное меню для десктопа */}
       <nav className={`nav-desktop ${burgerMenuOpen ? 'open' : ''}`}>
         <ul>
-          <li><Link to="/categories">Игра</Link></li>
-          <li><Link to="/game">Ходы</Link></li>
-          <li><Link to="/maps">Карты</Link></li>
-          <li><Link to="/statistics">Статистика</Link></li>
+        {team.role === 'user' && (
+            <>
+              <li>
+                <Link
+                  to="/categories"
+                  onClick={() => setBurgerMenuOpen(false)}
+                  className="link-button"
+                >
+                  Играть
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/game"
+                  onClick={() => setBurgerMenuOpen(false)}
+                  className="link-button"
+                >
+                  Вопросы
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/maps"
+                  onClick={() => setBurgerMenuOpen(false)}
+                  className="link-button"
+                >
+                  Карты
+                </Link>
+              </li>
+         
+            </>
+          )}
+          
+
           {team.role === 'admin' && (
             <>
-              <li><Link to="/manage-teams">Команды</Link></li>
-              <li><button onClick={handleMoveHistory} className="his">История ходов</button></li>
+            <li>
+              <Link to="/manage-teams" className="link-button">
+                Команды
+              </Link>
+            </li>
+            <li>
+              <button onClick={handleMoveHistory} className="button-style">
+                История ходов
+              </button>
+            </li>
+            <li>
+              <Link to="/statistics" className="link-button">
+                Статистика
+              </Link>
+            </li>
+
             </>
           )}
           <li className='log'><button onClick={onLogout} className="logouts">Выход</button></li>
@@ -225,25 +290,57 @@ const Header = ({
       {/* Бургер-меню для мобильной версии */}
       <nav className={`burger-nav ${burgerMenuOpen ? 'open' : ''}`}>
         <ul>
-          <Link to="/categories" onClick={() => setBurgerMenuOpen(false)}>
-            <li>Играть</li>
-          </Link>
-          <Link to="/game" onClick={() => setBurgerMenuOpen(false)}>
-            <li>Ходы</li>
-          </Link>
-          <Link to="/maps" onClick={() => setBurgerMenuOpen(false)}>
-            <li>Карты</li>
-          </Link>
-          <Link to="/statistics" onClick={() => setBurgerMenuOpen(false)}>
-            <li>Статистика</li>
-          </Link>
+
+          {team.role === 'user' && (
+            <>
+                   <li>
+                <Link
+                  to="/categories"
+                  onClick={() => setBurgerMenuOpen(false)}
+                  className="link-button"
+                >
+                  Играть
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/game"
+                  onClick={() => setBurgerMenuOpen(false)}
+                  className="link-button"
+                >
+                  Вопросы
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/maps"
+                  onClick={() => setBurgerMenuOpen(false)}
+                  className="link-button"
+                >
+                  Карты
+                </Link>
+              </li>
+          
+            </>
+          )}
+          
+          
           {team.role === 'admin' && (
             <>
-              <Link to="/manage-teams" onClick={() => setBurgerMenuOpen(false)}>
-                <li>Команды</li>
-              </Link>
               <li>
-                <button className="his" onClick={() => { handleMoveHistory(); setBurgerMenuOpen(false); }}>История ходов</button>
+                <Link to="/manage-teams" className="link-button">
+                  Команды
+                </Link>
+              </li>
+              <li>
+                <button onClick={handleMoveHistory} className="button-style">
+                  История ходов
+                </button>
+              </li>
+              <li>
+                <Link to="/statistics" className="link-button">
+                  Статистика
+                </Link>
               </li>
             </>
           )}
@@ -252,7 +349,6 @@ const Header = ({
           </li>
         </ul>
       </nav>
-
 
 
       <div className="right-user">

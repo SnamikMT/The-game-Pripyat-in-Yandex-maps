@@ -52,6 +52,29 @@ const teamsFilePath = path.join(__dirname, 'data', 'teams.json');
 
 const blocksDataFilePath = path.join(__dirname, './data/blocksData.json');
 
+const gameStatusPath = path.join(__dirname, 'data', 'gameStatus.json');
+
+// Функция для чтения статуса игры
+const getGameStatus = () => {
+  const rawData = fs.readFileSync(gameStatusPath);
+  const gameStatus = JSON.parse(rawData);
+  return gameStatus;
+};
+
+// Функция для обновления статуса игры
+const updateGameStatus = async (started) => {
+  try {
+    const gameStatusPath = path.join(__dirname, 'data', 'gameStatus.json');
+    const gameStatus = { gameStarted: started };
+    
+    await fss.writeFile(gameStatusPath, JSON.stringify(gameStatus, null, 2));
+    console.log(`Game status updated to ${started}`);
+  } catch (error) {
+    console.error('Error updating game status:', error);
+  }
+};
+
+
 // Чтение данных из файла команд
 async function readTeamsFile() {
   try {
@@ -302,6 +325,9 @@ let users = [];
 let gameState = {
   gameStarted: false,
   teams: [],
+  questions: [],
+  timeLeft: 0,
+  timerId: null,
 }; // Переменная для состояния игры
 
 // Загрузка пользователей из файла
@@ -441,6 +467,31 @@ app.post('/api/save-history', (req, res) => {
     }
   });
 });
+
+app.get('/api/get-teams-history', async (req, res) => {
+  const { teamName } = req.query;
+
+  if (!teamName) {
+    return res.status(400).json({ message: 'Team name is required.' });
+  }
+
+  try {
+    let teams = await readTeamsFile(); // Reading data from the file
+    let team = teams.find(t => t.username === teamName); // Use 'username' instead of 'name'
+
+    if (!team || !team.history) {
+      return res.status(404).json({ message: 'Team or team history not found.' });
+    }
+
+    res.status(200).json({ teamName: team.username, history: team.history });
+
+  } catch (error) {
+    console.error('Error retrieving team history:', error);
+    res.status(500).json({ message: 'Failed to retrieve team history' });
+  }
+});
+
+
 
 // Пример логики в статистике
 app.get('/api/teams', async (req, res) => {
@@ -845,7 +896,6 @@ app.get('/api/teams-progress', (req, res) => {
   });
 });
 
-
 // Пример использования fss для асинхронных операций с файлами
 app.post('/api/start-game', async (req, res) => {
   const { duration } = req.body;
@@ -855,11 +905,11 @@ app.post('/api/start-game', async (req, res) => {
     const teamsData = await fss.readFile(path.join(__dirname, 'data', 'teams.json'), 'utf8');
     let teams = JSON.parse(teamsData);
 
-    // Обновляем статус команд: только подготовленные команды могут войти в игру и очищаем историю
+    // Обновляем статус команд: только подготовленные команды могут войти в игру
     teams = teams.map(team => {
-        team.inGame = true;
-        team.isPrepared = false; // Сброс флага готовности
-        team.history = []; // Очищаем историю команды
+      team.inGame = true;
+      team.isPrepared = false; // Сброс флага готовности
+      team.history = []; // Очищаем историю команды
       return team;
     });
 
@@ -870,8 +920,15 @@ app.post('/api/start-game', async (req, res) => {
     const questionsData = await fss.readFile(path.join(__dirname, 'data', 'questions.json'), 'utf8');
     const questions = JSON.parse(questionsData);
 
+    // Обновляем состояние игры на сервере
+    gameState.gameStarted = true;
+    gameState.questions = questions;
+
     // Отправляем событие через сокеты
     io.emit('game_started', { questions, timeLeft: duration });
+
+    // Обновляем статус игры на true
+    await updateGameStatus(true);
 
     res.status(200).json({ message: 'Игра началась', questions });
   } catch (error) {
@@ -880,16 +937,25 @@ app.post('/api/start-game', async (req, res) => {
   }
 });
 
-
 // Эндпоинт для окончания игры
-app.post('/api/end-game', (req, res) => {
-  fs.readFile(teamsFilePath, 'utf-8', (err, data) => {
-    if (err) {
-      console.error('Ошибка чтения teams.json:', err);
-      return res.status(500).json({ message: 'Ошибка сервера' });
-    }
+app.post('/api/end-game', async (req, res) => {
+  // Останавливаем таймер
+  if (gameState.timerId) {
+    clearInterval(gameState.timerId);
+  }
 
-    let teams = JSON.parse(data);
+  // Обновляем состояние игры
+  gameState.gameStarted = false;
+  gameState.questions = [];
+  gameState.timeLeft = 0;
+
+  // Обновляем статус игры в JSON-файле
+  await updateGameStatus(false);
+
+  // Чтение файла с командами
+  try {
+    const teamsData = await fss.readFile(path.join(__dirname, 'data', 'teams.json'), 'utf-8');
+    let teams = JSON.parse(teamsData);
 
     // Сброс статуса всех команд
     teams = teams.map(team => {
@@ -898,17 +964,26 @@ app.post('/api/end-game', (req, res) => {
       return team;
     });
 
-    fs.writeFile(teamsFilePath, JSON.stringify(teams, null, 2), (err) => {
-      if (err) {
-        console.error('Ошибка записи teams.json:', err);
-        return res.status(500).json({ message: 'Ошибка завершения игры' });
-      }
+    // Сохранение обновленных данных
+    await fss.writeFile(path.join(__dirname, 'data', 'teams.json'), JSON.stringify(teams, null, 2));
 
-      res.status(200).json({ message: 'Игра завершена' });
-    });
-  });
+    res.status(200).json({ message: 'Игра завершена' });
+  } catch (error) {
+    console.error('Ошибка чтения teams.json:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
 });
 
+
+// API для получения статуса игры
+app.get('/api/game-status', (req, res) => {
+  try {
+    const gameStatus = getGameStatus();
+    res.json(gameStatus);
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка при получении статуса игры', error });
+  }
+});
 
 // Обработка сохранения вопросов
 app.post('/api/save-questions', (req, res) => {
@@ -1106,7 +1181,6 @@ app.post('/api/submit-answers', async (req, res) => {
 });
 
 
-
 // Функция для сохранения пользователей в файл
 const saveUsers = () => {
   fs.writeFile(usersFilePath, JSON.stringify({ users }, null, 2), (err) => {
@@ -1129,12 +1203,25 @@ async function getQuestions() {
   }
 }
 
+let gameStatus = 'waiting';
 const activeTeams = new Set();
 let timeLeft; // Время, оставшееся до окончания игры
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
+ // При новом подключении отправляем текущее состояние игры
+ socket.emit('game_status', { status: gameStatus, timeLeft });
+
+  // Если игра уже началась, отправляем текущие вопросы
+  if (gameStatus === 'started') {
+    socket.emit('game_started', { questions: gameQuestions, timeLeft });
+  }
+
+  socket.on('update_game_status', (status) => {
+    // Отправляем статус игры всем подключенным клиентам
+    io.emit('game_status', status);
+  });
 
   socket.on('search_in_category', async (team) => {
     try {
@@ -1201,34 +1288,44 @@ io.on('connection', (socket) => {
     }
   });
 
-
   // Старт игры и таймера
   socket.on('start_game', (duration) => {
     if (gameInterval) {
-      clearInterval(gameInterval); // Остановить текущий таймер, если игра уже запущена
+      clearInterval(gameInterval);  // Остановить текущий таймер, если игра уже запущена
     }
-
-    timeLeft = duration; // duration уже в секундах
-    console.log(`Игра началась на ${duration / 60} минут`);
-
+  
+    // Устанавливаем статус игры и сохраняем время
+    gameStatus = 'started';
+    timeLeft = duration;  // duration в секундах
+  
+  
+    io.emit('game_status', { status: gameStatus, timeLeft });
+  
+    // Запуск таймера
     gameInterval = setInterval(() => {
       timeLeft -= 1;
       io.emit('timer_update', { minutes: Math.floor(timeLeft / 60), seconds: timeLeft % 60 });
+  
+      // Когда время истечет, завершаем игру
       if (timeLeft <= 0) {
         clearInterval(gameInterval);
-        io.emit('game_ended');
+        gameStatus = 'ended';
+        io.emit('game_status', { status: gameStatus, message: 'Игра завершена!' });
       }
     }, 1000);
   });
+  
 
+  // Принудительное завершение игры
   socket.on('force_message', (message) => {
     io.emit('display_message', message);
-  });  
-
+  });
 
   // Завершение игры вручную
   socket.on('game_ended', () => {
     clearInterval(gameInterval); // Остановка таймера при завершении игры
+    gameStatus = 'ended'; // Обновляем статус игры
+    io.emit('game_status', { status: gameStatus, message: 'Игра завершена!' });
     io.emit('game_ended');
   });
 });

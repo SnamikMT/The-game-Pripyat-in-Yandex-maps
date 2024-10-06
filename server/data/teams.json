@@ -3,11 +3,22 @@
     "username": "rob",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "answers": [],
     "reward": 0,
     "points": 0,
-    "moves": 0,
+    "moves": 26,
     "history": []
+  },
+  {
+    "username": "ком 1",
+    "role": "user",
+    "isPrepared": false,
+    "inGame": false,
+    "moves": 0,
+    "answers": [],
+    "history": [],
+    "reward": 0,
+    "points": 0
   }
 ]

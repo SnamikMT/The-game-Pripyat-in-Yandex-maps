@@ -13,15 +13,16 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Attempting login with:", username, password);
-
+  
     try {
       const response = await axios.post(`${config.apiBaseUrl}/api/login`, {
         username,
         password,
       });
-
+  
       if (response.data) {
         console.log("Login response:", response.data);
+        localStorage.setItem("user", JSON.stringify(response.data)); // Сохраняем данные пользователя
         onLogin(response.data); // Передаем данные пользователя в App.js для изменения состояния
       }
     } catch (err) {
@@ -33,6 +34,7 @@ const Login = ({ onLogin }) => {
       }
     }
   };
+  
 
   return (
     <Container maxWidth="sm" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

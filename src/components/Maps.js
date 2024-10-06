@@ -5,9 +5,8 @@ const Maps = () => {
 
   const init = () => {
     const mapContainer = document.getElementById("map");
-    const panoramaContainer = document.getElementById("panorama");
 
-    if (mapContainer && panoramaContainer && !mapInstance) {
+    if (mapContainer && !mapInstance) {
       // Инициализация карты
       mapInstance = new window.ymaps.Map(mapContainer, {
         center: [51.405269, 30.053668],  // Координаты Припяти
@@ -20,32 +19,12 @@ const Maps = () => {
       });
 
       mapInstance.geoObjects.add(placemark);
-
-      // Проверяем поддержку панорам в браузере
-      if (window.ymaps.panorama.isSupported()) {
-        console.log("API поддерживает данный браузер.");
-
-        // Получение объекта панорамы
-        window.ymaps.panorama.locate([51.405269, 30.053668]).then(
-          function (panoramas) {
-            if (panoramas.length) {
-              console.log("Ура, нашлась панорама.");
-              new window.ymaps.panorama.Player(panoramaContainer, panoramas[0], {
-                direction: [256, 16],
-                hotkeysEnabled: true,
-              });
-            } else {
-              console.log("Для заданной точки не найдено ни одной панорамы.");
-            }
-          },
-          function (err) {
-            console.log("При попытке получить панораму возникла ошибка: ", err);
-          }
-        );
-      } else {
-        console.log("Данный браузер не поддерживается для панорам.");
-      }
     }
+  };
+
+  const openInYandexMaps = () => {
+    const coordinates = "51.405269,30.053668"; // Координаты для открытия в Яндекс Картах
+    window.open(`https://yandex.ru/maps/geo/misto_prypiat/1444484334/?l=stv%2Csta&ll=30.052478%2C51.409122&panorama%5Bdirection%5D=176.057240%2C-4.637984&panorama%5Bfull%5D=true&panorama%5Bpoint%5D=30.035373%2C51.408449&panorama%5Bspan%5D=108.728295%2C60.000000&z=15`, '_blank');
   };
 
   useEffect(() => {
@@ -53,9 +32,11 @@ const Maps = () => {
   }, []);
 
   return (
-    <div>
-      <div id="map" style={{ width: "100%", height: "400px" }}></div>
-      <div id="panorama" style={{ width: "100%", height: "400px" }}></div>
+    <div style={{ textAlign: 'center' }}>
+      <div id="map" style={{ width: "100%", height: "400px", marginBottom: "10px" }}></div>
+      <button onClick={openInYandexMaps} style={{ padding: "10px 20px", fontSize: "16px" }}>
+        Открыть в Яндекс Картах
+      </button>
     </div>
   );
 };

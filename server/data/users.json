@@ -17,6 +17,12 @@
       "password": "444",
       "role": "user",
       "isHidden": false
+    },
+    {
+      "username": "ком 1",
+      "password": "123",
+      "role": "user",
+      "isHidden": false
     }
   ]
 }

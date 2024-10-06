@@ -3,7 +3,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  height: auto;
+  min-height: 100vh;
   text-align: center;
   background-color: #363636; /* Темный фон */
   color: white; /* Белый текст */
@@ -112,4 +113,45 @@
 
 .toggle-button2 {
   margin-left: 10px;
+}
+
+
+@media (max-width: 520px) {
+  .search-input {
+    text-align: left;
+    width: 50%;
+  }
+
+  .search-container {
+    align-items: flex-start;
+    display: flex;
+    justify-content: center;
+  }
+
+  .team-item {
+    flex-direction: column;
+  }
+
+  .teams-list {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .edit-button, .toggle-button2, .delete-button {
+    margin-top: 15px;
+  }
+
+  .edit-button {
+    margin-left: 0;
+  }
+
+  .manage-teams-container h2 {
+    font-size: 25px;
+  }
+
+  .add-user-container h2{
+    font-size: 20px;
+  }
 }

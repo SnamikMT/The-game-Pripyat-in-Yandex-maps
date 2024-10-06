@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from 'axios';
 import {
   Grid,
   Typography,
@@ -24,10 +25,16 @@ import config from "./config";
 import Background from './Background.jpg';
 import DocumentIcon from './document-icon.png';
 import VoiceMessageIcon from './voice-message-icon.png';
+import io from 'socket.io-client'; // Import Socket.io client
+import TeamHistoryCard from './TeamHistoryCard';
+
+const socket = io(config.apiBaseUrl); // Connect to server
+
 
 const Categories = ({ team }) => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedNumber, setSelectedNumber] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [foundBlock, setFoundBlock] = useState(null);
   const [updatedTitle, setUpdatedTitle] = useState("");
@@ -43,11 +50,64 @@ const Categories = ({ team }) => {
   const [confirmSearchOpen, setConfirmSearchOpen] = useState(false);
   const [searchNotFoundOpen, setSearchNotFoundOpen] = useState(false);
 
+  // Add the missing states
+  const [timerValue, setTimerValue] = useState(0);
+  const [isGameStarted, setIsGameStarted] = useState(false);
+
+   // Добавляем состояние для истории запросов
+   const [historyData, setHistoryData] = useState([]);
+   const [searchHistory, setSearchHistory] = useState([]);
+
+
   useEffect(() => {
     fetch(`${config.apiBaseUrl}/api/blocks`)
       .then(response => response.json())
       .then(data => setCategories(data))
       .catch(error => console.error('Error loading block data:', error));
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Используем имя авторизованной команды
+        if (team && team.username) {
+          const response = await fetch(`http://localhost:5000/api/get-teams-history?teamName=${team.username}`);
+          const data = await response.json();
+          setHistoryData(data); // Сохранение истории в состояние
+          console.log('History:', data);
+        } else {
+          console.error('Имя команды не найдено');
+        }
+      } catch (error) {
+        console.error('Error fetching history data:', error);
+      }
+    };
+  
+    fetchData();
+  }, [team]);  // Добавьте 'team' как зависимость, чтобы обновлять данные при изменении авторизованной команды  
+  
+  useEffect(() => {
+    // Socket listeners for timer and game state
+    socket.on('timer_update', ({ minutes, seconds }) => {
+      const totalSeconds = minutes * 60 + seconds;
+      setTimerValue(totalSeconds);
+    });
+
+    socket.on('game_ended', () => {
+      setIsGameStarted(false);
+      setTimerValue(0);
+      clearSearchHistory();
+    });
+
+    socket.on('game_started', () => {
+      setIsGameStarted(true);
+    });
+
+    return () => {
+      socket.off('timer_update');
+      socket.off('game_ended');
+      socket.off('game_started');
+    };
   }, []);
 
   const handleCategoryChange = (event) => {
@@ -63,34 +123,59 @@ const Categories = ({ team }) => {
   };
 
   const handleSearch = async () => {
-    const categoryData = categories.find(category => category.category === selectedCategory);
-    if (categoryData) {
-      const block = categoryData.blocks.find(block => block.number === parseInt(inputValue));
-      if (block) {
-        setFoundBlock({
-          ...block,
-          showDocumentIcon: block.showDocumentIcon || false,
-          showVoiceMessageIcon: block.showVoiceMessageIcon || false,
-        });
-        setUpdatedTitle(block.title);
-        setUpdatedDescription(block.description);
-        setImagePreview(block.imageUrl ? `${config.apiBaseUrl}${block.imageUrl}` : "");
-        setSecondImagePreview(block.image2Url ? `${config.apiBaseUrl}${block.image2Url}` : "");
-        setVoiceMessagePreview(block.voiceMessageUrl ? `${config.apiBaseUrl}${block.voiceMessageUrl}` : "");
-        setIsEditing(false);
-
-        if (team && team.username) {
-          await updateMoves(team.username);
-          await saveSearchHistory(team.username, block.number, selectedCategory);
-        }
-      } else {
-        setFoundBlock(null);
-        await updateMoves(team.username);
-        setSearchNotFoundOpen(true);
+    try {
+      // Запрос статуса игры с сервера через axios
+      const response = await axios.get(`${config.apiBaseUrl}/api/game-status`);
+      const { isStarted } = response.data;  // Предполагаем, что сервер возвращает поле isStarted
+  
+      // Проверяем статус игры
+      if (isStarted) {
+        alert("Поиск недоступен. Игра не запущена.");
+        return;
       }
+  
+      // Проверяем таймер
+      if (timerValue === 0) {
+        alert("Поиск недоступен. Таймер истек.");
+        return;
+      }
+  
+      // Поиск блока на основе выбранной категории и введенного значения
+      const categoryData = categories.find(category => category.category === selectedCategory);
+      if (categoryData) {
+        const block = categoryData.blocks.find(block => block.number === parseInt(inputValue));
+        if (block) {
+          setFoundBlock({
+            ...block,
+            showDocumentIcon: block.showDocumentIcon || false,
+            showVoiceMessageIcon: block.showVoiceMessageIcon || false,
+          });
+          setUpdatedTitle(block.title);
+          setUpdatedDescription(block.description);
+          setImagePreview(block.imageUrl ? `${config.apiBaseUrl}${block.imageUrl}` : "");
+          setSecondImagePreview(block.image2Url ? `${config.apiBaseUrl}${block.image2Url}` : "");
+          setVoiceMessagePreview(block.voiceMessageUrl ? `${config.apiBaseUrl}${block.voiceMessageUrl}` : "");
+          setIsEditing(false);
+  
+          // Обновление ходов и сохранение истории поиска
+          if (team && team.username) {
+            await updateMoves(team.username);
+            await saveSearchHistory(team.username, block.number, selectedCategory);
+          }
+        } else {
+          setFoundBlock(null);
+          await updateMoves(team.username);
+          setSearchNotFoundOpen(true);
+        }
+      }
+      setHasSearched(true);
+    } catch (error) {
+      console.error('Error checking game status:', error);
+      alert("Ошибка проверки статуса игры.");
     }
-    setHasSearched(true);
   };
+  
+
 
   const handleConfirmSearch = () => {
     setConfirmSearchOpen(false);
@@ -106,6 +191,12 @@ const Categories = ({ team }) => {
         },
         body: JSON.stringify({ teamName, blockNumber, category }),
       });
+
+      setSearchHistory(prevHistory => [
+        ...prevHistory,
+        { blockNumber, category, timestamp: new Date().toISOString() }  // Add timestamp to each history entry
+      ]);
+
       const result = await response.json();
       if (result.message === 'История поиска сохранена') {
         console.log('История поиска успешно записана');
@@ -115,7 +206,8 @@ const Categories = ({ team }) => {
     } catch (error) {
       console.error('Ошибка при записи истории поиска:', error);
     }
-  };
+};
+
 
   const updateMoves = async (teamName) => {
     try {
@@ -277,6 +369,10 @@ const Categories = ({ team }) => {
     }
   };
 
+  const clearSearchHistory = () => {
+    setSearchHistory([]); // Очищаем историю запросов
+  };
+
   return (
     <div
       style={{
@@ -293,41 +389,55 @@ const Categories = ({ team }) => {
     >
       <div style={{ width: '100%', maxWidth: '600px', background: 'rgba(255, 255, 255, 0.8)', padding: '20px', borderRadius: '10px' }}>
         <Typography variant="h4" gutterBottom>
-          Сделать ход
+          Выбрать объект
         </Typography>
 
         <Grid container spacing={2} alignItems="center" style={{ marginBottom: "20px" }}>
-          <Grid item xs={12} sm={4}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="category-select-label">Выбрать категорию</InputLabel>
-              <Select
-                labelId="category-select-label"
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                label="Выбрать категорию"
-              >
-                {categories.map(category => (
-                  <MenuItem key={category.category} value={category.category}>
-                    {category.category}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+        <Grid item xs={12} sm={4}>
+          <FormControl fullWidth variant="outlined">
+            <InputLabel id="category-select-label">Выбрать категорию</InputLabel>
+            <Select
+              labelId="category-select-label"
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              label="Выбрать категорию"
+              style={{ width: '100%' }} // Установка ширины 100%
+            >
+              {categories.map(category => (
+                <MenuItem key={category.category} value={category.category} style={{ width: '100%' }}>
+                  {category.category}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Введите номер"
-              variant="outlined"
-              value={inputValue}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid>
+        <Grid item xs={12} sm={4}>
+          <FormControl fullWidth variant="outlined">
+            <InputLabel id="number-select-label">Выбрать номер (1-12)</InputLabel>
+            <Select
+              labelId="number-select-label"
+              value={selectedNumber}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedNumber(value); // обновление состояния выбранного номера
+                setInputValue(value); // установка номера в текстовое поле
+              }}
+              label="Выбрать номер (1-12)"
+              style={{ width: '100%' }} // Установка ширины 100%
+            >
+              {[...Array(12).keys()].map(number => (
+                <MenuItem key={number + 1} value={number + 1} style={{ width: '100%' }}>
+                  {number + 1}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
 
           <Grid item xs={12} sm={2}>
             <Button variant="contained" color="primary" onClick={() => setConfirmSearchOpen(true)}>
-              Найти
+              Запрос
             </Button>
           </Grid>
         </Grid>
@@ -473,6 +583,18 @@ const Categories = ({ team }) => {
               </Button>
             </DialogActions>
           </Dialog>
+
+           {/* Отображение истории запросов команды */}
+           <div>
+            {/* Existing code for searching blocks */}
+            
+            <Typography variant="h4" gutterBottom>
+              История
+            </Typography>
+
+            <TeamHistoryCard team={team} />
+          </div>
+
 
           {/* Уведомление, если ничего не найдено */}
           <Snackbar 
