@@ -105,11 +105,23 @@ const Game = ({ team, socket }) => {
 
   // Обработка отправки ответов
   const handleSubmit = () => {
-    socket.emit('submit_answers', { team, answers });
+    const formattedAnswers = {};
+    
+    // Форматируем ответы в нужный формат
+    Object.keys(answers).forEach((index) => {
+      formattedAnswers[index] = {
+        text: answers[index], // Текст ответа
+        graded: false, // По умолчанию, не оцененный ответ
+      };
+    });
+
+    // Убедитесь, что team.username действительно доступен здесь
+    socket.emit('submit_answers', { team: { username: team.username }, answers: formattedAnswers });
     setHasSubmitted(true);
     localStorage.setItem(`hasSubmitted_${team.username}`, 'true');
     localStorage.removeItem(`answers_${team.username}`);
   };
+
 
   // Изменение ответов
   const handleAnswerChange = (index, value) => {

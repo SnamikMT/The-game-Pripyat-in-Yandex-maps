@@ -266,6 +266,15 @@ const Header = ({
           {team.role === 'admin' && (
             <>
             <li>
+                <Link
+                  to="/categories"
+                  onClick={() => setBurgerMenuOpen(false)}
+                  className="link-button"
+                >
+                  Играть
+                </Link>
+              </li>
+            <li>
               <Link to="/manage-teams" className="link-button">
                 Команды
               </Link>
@@ -328,6 +337,15 @@ const Header = ({
           
           {team.role === 'admin' && (
             <>
+            <li>
+                <Link
+                  to="/categories"
+                  onClick={() => setBurgerMenuOpen(false)}
+                  className="link-button"
+                >
+                  Играть
+                </Link>
+              </li>
               <li>
                 <Link to="/manage-teams" onClick={() => setBurgerMenuOpen(false)} className="link-button">
                   Команды

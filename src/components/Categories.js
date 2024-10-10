@@ -31,7 +31,7 @@ import TeamHistoryCard from './TeamHistoryCard';
 const socket = io(config.apiBaseUrl); // Connect to server
 
 
-const Categories = ({ team }) => {
+const Categories = ({ team, teamMoves }) => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedNumber, setSelectedNumber] = useState("");
@@ -71,7 +71,7 @@ const Categories = ({ team }) => {
       try {
         // Используем имя авторизованной команды
         if (team && team.username) {
-          const response = await fetch(`http://localhost:5000/api/get-teams-history?teamName=${team.username}`);
+          const response = await fetch(`${config.apiBaseUrl}/api/get-teams-history?teamName=${team.username}`);
           const data = await response.json();
           setHistoryData(data); // Сохранение истории в состояние
           console.log('History:', data);
@@ -110,6 +110,43 @@ const Categories = ({ team }) => {
     };
   }, []);
 
+  useEffect(() => {
+    // Socket listener for history updates
+    socket.on('history_updated', (data) => {
+      if (data.teamName === team.username) {
+        fetchHistoryData(); // Функция для получения обновленных данных
+      }
+    });
+  
+    return () => {
+      socket.off('history_updated');
+    };
+  }, [team]);
+  
+  // Функция для получения обновленных данных истории команды
+  const fetchHistoryData = async () => {
+    try {
+      if (team && team.username) {
+        const response = await fetch(`${config.apiBaseUrl}/api/get-teams-history?teamName=${team.username}`);
+        const data = await response.json();
+        setSearchHistory(data.history); // Обновляем данные истории в состояние searchHistory
+      }
+    } catch (error) {
+      console.error('Error fetching history data:', error);
+    }
+  };
+
+  // Make sure teamMoves is defined and has a structure we expect
+  const usedBlockNumbers = (teamMoves && Array.isArray(teamMoves) ? teamMoves : [])
+    .flatMap(team => (team.history ? team.history : []))
+    .map(historyItem => historyItem.blockNumber);
+
+  // Generating available numbers excluding the used ones
+  const availableNumbers = [...Array(12).keys()]
+    .map(number => number + 1)
+    .filter(number => !usedBlockNumbers.includes(number));
+
+
   const handleCategoryChange = (event) => {
     setSelectedCategory(event.target.value);
     setFoundBlock(null);
@@ -124,58 +161,92 @@ const Categories = ({ team }) => {
 
   const handleSearch = async () => {
     try {
-      // Запрос статуса игры с сервера через axios
-      const response = await axios.get(`${config.apiBaseUrl}/api/game-status`);
-      const { isStarted } = response.data;  // Предполагаем, что сервер возвращает поле isStarted
-  
-      // Проверяем статус игры
-      if (isStarted) {
-        alert("Поиск недоступен. Игра не запущена.");
-        return;
-      }
-  
-      // Проверяем таймер
-      if (timerValue === 0) {
-        alert("Поиск недоступен. Таймер истек.");
-        return;
-      }
-  
-      // Поиск блока на основе выбранной категории и введенного значения
-      const categoryData = categories.find(category => category.category === selectedCategory);
-      if (categoryData) {
-        const block = categoryData.blocks.find(block => block.number === parseInt(inputValue));
-        if (block) {
-          setFoundBlock({
-            ...block,
-            showDocumentIcon: block.showDocumentIcon || false,
-            showVoiceMessageIcon: block.showVoiceMessageIcon || false,
-          });
-          setUpdatedTitle(block.title);
-          setUpdatedDescription(block.description);
-          setImagePreview(block.imageUrl ? `${config.apiBaseUrl}${block.imageUrl}` : "");
-          setSecondImagePreview(block.image2Url ? `${config.apiBaseUrl}${block.image2Url}` : "");
-          setVoiceMessagePreview(block.voiceMessageUrl ? `${config.apiBaseUrl}${block.voiceMessageUrl}` : "");
-          setIsEditing(false);
-  
-          // Обновление ходов и сохранение истории поиска
-          if (team && team.username) {
-            await updateMoves(team.username);
-            await saveSearchHistory(team.username, block.number, selectedCategory);
-          }
-        } else {
-          setFoundBlock(null);
-          await updateMoves(team.username);
-          setSearchNotFoundOpen(true);
-        }
-      }
-      setHasSearched(true);
-    } catch (error) {
-      console.error('Error checking game status:', error);
-      alert("Ошибка проверки статуса игры.");
-    }
-  };
-  
+        // Сначала получаем обновленную историю
+        await fetchHistoryData();
 
+        // Если пользователь админ, пропускаем проверки
+        if (team.username === 'admin') {
+            performSearch();
+            return;
+        }
+
+        // Запрос статуса игры с сервера через axios
+        const response = await axios.get(`${config.apiBaseUrl}/api/game-status`);
+        const { isStarted } = response.data;
+
+        // Проверяем статус игры
+        if (isStarted) {
+            alert("Поиск недоступен. Игра не запущена.");
+            return;
+        }
+
+        // Проверяем таймер
+        if (timerValue === 0) {
+            alert("Поиск недоступен. Таймер истек.");
+            return;
+        }
+
+        const blockNumber = parseInt(inputValue);
+        const searchKey = `${selectedCategory}_${blockNumber}`;
+
+        // Проверяем историю запросов по категории и номеру блока
+        if (searchHistory.includes(searchKey)) {
+            alert("Вы уже делали запрос на этот блок.");
+            return;
+        }
+
+        // Проверяем историю запросов команды
+        const teamResponse = await axios.get(`${config.apiBaseUrl}/api/teams`);
+        const teamData = teamResponse.data.find(t => t.username === team.username);
+
+        if (teamData && teamData.history.some(item => `${item.category}_${item.blockNumber}` === searchKey)) {
+            alert("Этот поиск уже был выполнен.");
+            return;
+        }
+
+        performSearch();  // Выполняем сам поиск
+    } catch (error) {
+        console.error('Error checking game status:', error);
+        alert("Ошибка проверки статуса игры.");
+    }
+};
+
+const performSearch = async () => {
+    const blockNumber = parseInt(inputValue);
+    const searchKey = `${selectedCategory}_${blockNumber}`;
+
+    const categoryData = categories.find(category => category.category === selectedCategory);
+    if (categoryData) {
+        const block = categoryData.blocks.find(block => block.number === blockNumber);
+        if (block) {
+            setFoundBlock({
+                ...block,
+                showDocumentIcon: block.showDocumentIcon || false,
+                showVoiceMessageIcon: block.showVoiceMessageIcon || false,
+            });
+            setUpdatedTitle(block.title);
+            setUpdatedDescription(block.description);
+            setImagePreview(block.imageUrl ? `${config.apiBaseUrl}${block.imageUrl}` : "");
+            setSecondImagePreview(block.image2Url ? `${config.apiBaseUrl}${block.image2Url}` : "");
+            setVoiceMessagePreview(block.voiceMessageUrl ? `${config.apiBaseUrl}${block.voiceMessageUrl}` : "");
+            setIsEditing(false);
+
+            // Обновление ходов и сохранение истории поиска
+            if (team && team.username !== 'admin') {
+                await updateMoves(team.username);
+                await saveSearchHistory(team.username, block.number, selectedCategory);
+
+                setSearchHistory(prevHistory => [...prevHistory, searchKey]);
+            }
+        } else {
+            setFoundBlock(null);
+            await updateMoves(team.username);
+            setSearchNotFoundOpen(true);
+        }
+    }
+    setHasSearched(true);
+};
+  
 
   const handleConfirmSearch = () => {
     setConfirmSearchOpen(false);
@@ -184,29 +255,33 @@ const Categories = ({ team }) => {
 
   const saveSearchHistory = async (teamName, blockNumber, category) => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/save-history`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ teamName, blockNumber, category }),
-      });
+        const response = await fetch(`${config.apiBaseUrl}/api/save-history`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ teamName, blockNumber, category }),
+        });
 
-      setSearchHistory(prevHistory => [
-        ...prevHistory,
-        { blockNumber, category, timestamp: new Date().toISOString() }  // Add timestamp to each history entry
-      ]);
+        if (!response.ok) {
+            throw new Error('Ошибка при записи истории поиска');
+        }
 
-      const result = await response.json();
-      if (result.message === 'История поиска сохранена') {
-        console.log('История поиска успешно записана');
-      } else {
-        console.error(result.message);
-      }
+        const result = await response.json();
+        if (result.message === 'История поиска сохранена') {
+            console.log('История поиска успешно записана');
+            setSearchHistory(prevHistory => [
+                ...prevHistory,
+                { blockNumber, category, timestamp: new Date().toISOString() }
+            ]);
+        } else {
+            console.error(result.message);
+        }
     } catch (error) {
-      console.error('Ошибка при записи истории поиска:', error);
+        console.error('Ошибка при записи истории поиска:', error);
     }
 };
+
 
 
   const updateMoves = async (teamName) => {
@@ -426,21 +501,21 @@ const Categories = ({ team }) => {
               label="Выбрать номер (1-12)"
               style={{ width: '100%' }} // Установка ширины 100%
             >
-              {[...Array(12).keys()].map(number => (
-                <MenuItem key={number + 1} value={number + 1} style={{ width: '100%' }}>
-                  {number + 1}
+              {availableNumbers.map(number => (
+                <MenuItem key={number} value={number} style={{ width: '100%' }}>
+                  {number}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
 
-          <Grid item xs={12} sm={2}>
-            <Button variant="contained" color="primary" onClick={() => setConfirmSearchOpen(true)}>
-              Запрос
-            </Button>
-          </Grid>
+        <Grid item xs={12} sm={2}>
+          <Button variant="contained" color="primary" onClick={() => setConfirmSearchOpen(true)}>
+            Запрос
+          </Button>
         </Grid>
+      </Grid>
 
         {foundBlock && (
           <Card style={{ marginTop: "20px" }}>
@@ -592,7 +667,7 @@ const Categories = ({ team }) => {
               История
             </Typography>
 
-            <TeamHistoryCard team={team} />
+            <TeamHistoryCard team={team} newSearchHistory={searchHistory} />
           </div>
 
 

@@ -205,6 +205,7 @@
   border-radius: 5px;
   padding-bottom: 10px;
   padding-top: 10px;
+  cursor: pointer;
 }
 
 .game-section {
@@ -560,8 +561,11 @@ ul li a{
 
 .answer-card h4 {
   margin-bottom: 10px;
-  color: #e63946;
   font-size: 20px;
+}
+
+.ansteam {
+  color: #e63946;
 }
 
 .answer-card ul {
@@ -591,8 +595,8 @@ ul li a{
 .score-input input {
   padding: 5px;
   border: 1px solid #ddd;
-  border-radius: 5px;
-  width: 100px;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
 
@@ -1042,7 +1046,7 @@ h2, h3 {
 
 .ans {
   font-size: 25px;
-  color: #ffffff;
+  color: #ffeb99;
 }
 
 .questSuccess {
@@ -1050,3 +1054,45 @@ h2, h3 {
   font-size: 20px;
 }
 
+/* радио */
+.radio-group {
+  display: flex; /* Используем flexbox для горизонтального расположения */
+  gap: 20px; /* Промежуток между радиокнопками */
+}
+
+.radio-label {
+  display: flex;
+  align-items: center; /* Центрируем текст и радиокнопку по вертикали */
+}
+
+.radio-input {
+  appearance: none; /* Убираем стандартный вид радиокнопки */
+  width: 20px; /* Ширина радиокнопки */
+  height: 20px; /* Высота радиокнопки */
+  border: 2px solid #007bff; /* Цвет границы */
+  border-radius: 50%; /* Делаем радиокнопку круглой */
+  position: relative; /* Позиционируем радиокнопку для псевдоэлемента */
+  outline: none; /* Убираем обводку */
+  transition: background-color 0.3s, border-color 0.3s; /* Плавный переход при наведении */
+}
+
+.radio-input:checked {
+  background-color: #007bff; /* Цвет фона при выборе */
+  border-color: #0056b3; /* Цвет границы при выборе */
+}
+
+.radio-input:checked::after {
+  content: ''; /* Псевдоэлемент для внутреннего круга */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px; /* Ширина внутреннего круга */
+  height: 10px; /* Высота внутреннего круга */
+  border-radius: 50%; /* Делаем внутренний круг круглым */
+  background-color: white; /* Цвет внутреннего круга */
+  transform: translate(-50%, -50%); /* Центрируем внутренний круг */
+}
+
+.radio-text {
+  margin-left: 8px; /* Отступ между радиокнопкой и текстом */
+}

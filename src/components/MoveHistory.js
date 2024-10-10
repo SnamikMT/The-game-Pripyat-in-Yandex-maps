@@ -46,7 +46,6 @@ const MoveHistory = () => {
     console.log("Категория не найдена");
     return null; // Если блок или категория не найдены
   };
-  
 
   return (
     <div className="move-history-container">
@@ -57,7 +56,7 @@ const MoveHistory = () => {
             <h3>Команда: {team.username}</h3>
             <div className="team-history">
               {team.history && team.history.length > 0 ? (
-                team.history.map((move, moveIndex) => {
+                team.history.slice().reverse().map((move, moveIndex) => { // Сортировка в обратном порядке
                   const block = getBlockByNumberAndCategory(move.blockNumber, move.category); // Ищем блок по номеру и категории
                   return (
                     <div key={moveIndex} className="move-card">

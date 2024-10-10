@@ -74,6 +74,15 @@ const updateGameStatus = async (started) => {
   }
 };
 
+const writeAnswersFile = async (answers) => {
+  try {
+    await fs.writeFile('./data/answers.json', JSON.stringify(answers, null, 2));
+    console.log('Answers updated successfully');
+  } catch (error) {
+    console.error('Error writing answers file:', error);
+  }
+};
+
 
 // Чтение данных из файла команд
 async function readTeamsFile() {
@@ -95,13 +104,23 @@ async function readTeamsFile() {
 }
 
 // Запись данных в файл команд
-async function writeTeamsFile(data) {
+let isWriting = false;
+
+const writeTeamsFile = async (data) => {
+  if (isWriting) return; // Если запись уже идет, игнорируем новые вызовы
+  isWriting = true; // Устанавливаем блокировку
+
   try {
     await fs.promises.writeFile(teamsFilePath, JSON.stringify(data, null, 2));
+    console.log('Данные успешно записаны в файл:', teamsFilePath);
   } catch (err) {
     console.error('Ошибка записи файла команд:', err);
+  } finally {
+    isWriting = false; // Снимаем блокировку
   }
-}
+};
+
+
 
 
 // Чтение данных из файла answers.json
@@ -455,6 +474,9 @@ app.post('/api/save-history', (req, res) => {
         timestamp: new Date().toISOString()
       });
 
+      // Пример серверного кода
+      io.emit('history_updated', { teamName });
+
       // Сохраняем файл с обновленной информацией
       fs.writeFile(teamsFilePath, JSON.stringify(teams, null, 2), (err) => {
         if (err) {
@@ -752,7 +774,6 @@ app.post('/api/answers', (req, res) => {
     let existingAnswers;
     try {
       existingAnswers = JSON.parse(data);
-      // Проверяем, что данные являются массивом
       if (!Array.isArray(existingAnswers)) {
         console.warn("Expected array but found different data. Initializing empty array.");
         existingAnswers = []; // Инициализируем пустой массив, если структура некорректна
@@ -764,21 +785,37 @@ app.post('/api/answers', (req, res) => {
 
     console.log('Received answer from team:', team, 'Answers:', answers);
 
-
-    // Проверяем, есть ли уже ответы от этой команды
-    const existingTeamIndex = existingAnswers.findIndex(item => item.team === team);
-
     const submittedAt = new Date().toISOString();
-
     console.log('Submitted at:', submittedAt); // Лог для проверки
 
+    // Найдем индекс команды, если она уже отправляла ответы
+    const existingTeamIndex = existingAnswers.findIndex(item => item.team === team);
+
     if (existingTeamIndex >= 0) {
-      // Обновляем
-      existingAnswers[existingTeamIndex].answers = answers;
+      // Обновляем ответы команды
+      const updatedAnswers = { ...existingAnswers[existingTeamIndex].answers };
+
+      // Обновляем существующие или добавляем новые ответы
+      Object.keys(answers).forEach((questionIndex) => {
+        updatedAnswers[questionIndex] = {
+          text: answers[questionIndex],  // Обновляем только текст ответа
+          graded: updatedAnswers[questionIndex]?.graded || false, // Сохраняем предыдущий статус "graded"
+        };
+      });
+
+      existingAnswers[existingTeamIndex].answers = updatedAnswers;
       existingAnswers[existingTeamIndex].submittedAt = submittedAt;
     } else {
-      // Добавляем
-      existingAnswers.push({ team, answers, submittedAt });
+      // Добавляем новую команду и ответы
+      const newAnswers = {};
+      Object.keys(answers).forEach((questionIndex) => {
+        newAnswers[questionIndex] = {
+          text: answers[questionIndex], // Сохраняем текст ответа
+          graded: false, // По умолчанию, ответы не оценены
+        };
+      });
+
+      existingAnswers.push({ team, answers: newAnswers, submittedAt });
     }
 
     // Записываем обновленные ответы обратно в файл
@@ -790,6 +827,8 @@ app.post('/api/answers', (req, res) => {
     });
   });
 });
+
+
 
 // Обработчик отправки ответов
 app.post('/api/submit-answers', (req, res) => {
@@ -1008,40 +1047,34 @@ app.post('/api/clear-answers', (req, res) => {
   });
 });
 
-// Эндпоинт для отправки ответов
-app.post('/api/send-answers', (req, res) => {
-  const { team, answers } = req.body;
+// // Эндпоинт для отправки ответов
+// app.post('/api/send-answers', (req, res) => {
+//   const { team, answers } = req.body;
 
-  // Логика для сохранения ответов в файл answers.json
-  const newAnswer = { team, answers };
-  answersData.push(newAnswer); // или обновляем ответы
+//   // Логика для сохранения ответов в файл answers.json
+//   const newAnswer = { team, answers };
+//   answersData.push(newAnswer); // или обновляем ответы
 
-  fs.writeFile(answersFilePath, JSON.stringify(answersData, null, 2), (err) => {
-    if (err) {
-      console.error('Ошибка записи в answers.json:', err);
-      return res.status(500).json({ message: 'Ошибка отправки ответов' });
-    }
+//   fs.writeFile(answersFilePath, JSON.stringify(answersData, null, 2), (err) => {
+//     if (err) {
+//       console.error('Ошибка записи в answers.json:', err);
+//       return res.status(500).json({ message: 'Ошибка отправки ответов' });
+//     }
 
-    // Оповещаем всех подключенных клиентов (особенно админов) об обновлении ответов
-    io.emit('new_answer', newAnswer);
+//     // Оповещаем всех подключенных клиентов (особенно админов) об обновлении ответов
+//     io.emit('new_answer', newAnswer);
 
-    res.status(200).json({ message: 'Ответы отправлены' });
-  });
-});
-
-
-// Record Score
-app.post('/api/record-score', (req, res) => {
-  const { teamId, score } = req.body;
-  // Logic to record the score for the team
-  res.status(200).send('Score recorded');
-});
+//     res.status(200).json({ message: 'Ответы отправлены' });
+//   });
+// });
 
 
 // Эндпоинт для расчета гонораров
 app.post('/api/teams/update-reward', async (req, res) => {
   const { team, reward } = req.body;
 
+  console.log(`Запрос на обновление награды для команды: ${team}, Награда: ${reward}`);
+  
   if (!team || reward === undefined) {
     return res.status(400).json({ message: 'Invalid request' });
   }
@@ -1087,14 +1120,16 @@ app.post('/api/teams/clear-reward', async (req, res) => {
 
     await writeTeamsFile(teams);
 
-    res.json({ message: 'Reward cleared successfully', team: teams[teamIndex] });
+    // Убедитесь, что возвращаете только нужные данные
+    const { reward, points, moves, username } = teams[teamIndex];
+    res.json({ message: 'Reward cleared successfully', team: { username, reward, points, moves } });
   } catch (error) {
     console.error('Error clearing reward:', error);
     res.status(500).json({ message: 'Failed to clear reward' });
   }
 });
 
-// Эндпоинт для полной очистки данных команды (очков, ходов и гонорара)
+// Эндпоинт для полной очистки данных команды
 app.post('/api/teams/clear-all', async (req, res) => {
   const { team } = req.body;
 
@@ -1117,12 +1152,15 @@ app.post('/api/teams/clear-all', async (req, res) => {
 
     await writeTeamsFile(teams);
 
-    res.json({ message: 'All data cleared successfully', team: teams[teamIndex] });
+    // Убедитесь, что возвращаете только нужные данные
+    const { username, reward, points, moves } = teams[teamIndex];
+    res.json({ message: 'All data cleared successfully', team: { username, reward, points, moves } });
   } catch (error) {
     console.error('Error clearing all data:', error);
     res.status(500).json({ message: 'Failed to clear all data' });
   }
 });
+
 
 // Эндпоинт для обновления баллов команды
 app.post('/api/teams/admin/scores', async (req, res) => {
@@ -1136,10 +1174,12 @@ app.post('/api/teams/admin/scores', async (req, res) => {
 
   try {
     let teams = await readTeamsFile();
+    let answers = await readJsonFile(answersFilePath); // Читаем данные ответов
     console.log('Current teams data:', teams);
+    console.log('Current answers data:', answers);
 
-    if (!Array.isArray(teams)) {
-      return res.status(500).json({ message: 'Invalid teams data format' });
+    if (!Array.isArray(teams) || !Array.isArray(answers)) {
+      return res.status(500).json({ message: 'Invalid data format' });
     }
 
     const teamIndex = teams.findIndex(t => t.username === team);
@@ -1151,9 +1191,23 @@ app.post('/api/teams/admin/scores', async (req, res) => {
     const totalScore = scores.reduce((acc, item) => acc + item.score, 0);
     teams[teamIndex].points = (teams[teamIndex].points || 0) + totalScore;
 
+    // Обновляем флаг graded для ответов
+    const answerIndex = answers.findIndex(a => a.team === team);
+    if (answerIndex !== -1) {
+      scores.forEach(({ questionIndex }) => {
+        if (answers[answerIndex].answers[questionIndex] !== undefined) {
+          answers[answerIndex].answers[questionIndex].graded = true; // Устанавливаем флаг graded в true
+        }
+      });
+    } else {
+      console.error(`Answers for team "${team}" not found`);
+    }
+
     console.log('Updated team data:', teams[teamIndex]);
+    console.log('Updated answers data:', answers); // Логируем обновлённые данные ответов
 
     await writeTeamsFile(teams);
+    await writeJsonFile(answersFilePath, answers); // Записываем обновлённые данные ответов
 
     res.json({ message: 'Scores updated successfully', teams });
   } catch (error) {
@@ -1163,22 +1217,71 @@ app.post('/api/teams/admin/scores', async (req, res) => {
 });
 
 
-// Пример кода на сервере (Node.js)
-app.post('/api/submit-answers', async (req, res) => {
-  const { teamName, answers } = req.body;
 
-  // Логика сохранения ответов
-  const team = await findTeamByName(teamName);
-  if (!team) return res.status(400).send('Команда не найдена');
+// Эндпоинт для обновления статуса ответа
+app.post('/api/answers/score', (req, res) => {
+  const { team, questionIndex } = req.body; // Получаем команду и индекс вопроса из тела запроса
 
-  // Добавление статуса отправки ответов
-  team.answersSubmitted = true;
-  team.answers = answers;
+  // Проверка на наличие необходимых данных
+  if (!team || questionIndex === undefined) {
+      return res.status(400).json({ message: 'Команда и индекс вопроса обязательны.' });
+  }
 
-  await saveTeamData(team);
+  // Чтение существующих ответов
+  fs.readFile(answersFilePath, 'utf8', (err, data) => {
+      if (err) {
+          console.error('Ошибка чтения файла ответов:', err);
+          return res.status(500).json({ message: 'Ошибка сервера.' });
+      }
 
-  res.send({ message: 'Ответы успешно отправлены' });
+      // Преобразование данных из файла в объект
+      let answers = JSON.parse(data);
+      const teamIndex = answers.findIndex(answer => answer.team === team);
+
+      // Проверка на существование команды
+      if (teamIndex === -1) {
+          return res.status(404).json({ message: 'Команда не найдена.' });
+      }
+
+      // Обновление статуса ответа
+      const question = answers[teamIndex].answers[questionIndex];
+
+      if (question && !question.graded) {
+          question.graded = true; // Устанавливаем graded в true
+
+          // Запись обновленных данных обратно в файл
+          fs.writeFile(answersFilePath, JSON.stringify(answers, null, 2), (err) => {
+              if (err) {
+                  console.error('Ошибка записи файла ответов:', err);
+                  return res.status(500).json({ message: 'Ошибка сервера.' });
+              }
+
+              res.status(200).json({ message: 'Статус ответа обновлен.', answers });
+          });
+      } else {
+          res.status(400).json({ message: 'Ответ уже оценен или не существует.' });
+      }
+  });
 });
+
+
+
+// // Пример кода на сервере (Node.js)
+// app.post('/api/submit-answers', async (req, res) => {
+//   const { teamName, answers } = req.body;
+
+//   // Логика сохранения ответов
+//   const team = await findTeamByName(teamName);
+//   if (!team) return res.status(400).send('Команда не найдена');
+
+//   // Добавление статуса отправки ответов
+//   team.answersSubmitted = true;
+//   team.answers = answers;
+
+//   await saveTeamData(team);
+
+//   res.send({ message: 'Ответы успешно отправлены' });
+// });
 
 
 // Функция для сохранения пользователей в файл
@@ -1274,19 +1377,22 @@ io.on('connection', (socket) => {
       const submittedAt = new Date().toISOString(); // Получаем текущее время
 
       if (existingTeamIndex >= 0) {
-        currentAnswers[existingTeamIndex].answers = answers;
+        // Если команда уже отправляла ответы, обновляем их
+        currentAnswers[existingTeamIndex].answers = answers; // Обновляем ответы
         currentAnswers[existingTeamIndex].submittedAt = submittedAt; // Обновляем время отправки
       } else {
-        currentAnswers.push({ team: team.username, answers, submittedAt }); // Сохраняем время отправки
+        // Если команда отправляет ответы впервые, добавляем новую запись
+        currentAnswers.push({ team: team.username, answers, submittedAt });
       }
 
       await fs.promises.writeFile(answersFilePath, JSON.stringify(currentAnswers, null, 2));
       console.log('Ответы успешно сохранены');
-      io.emit('new_answer', { team: team.username, answers, submittedAt }); // Отправляем время отправки
+      io.emit('new_answer', { team: team.username, answers, submittedAt }); // Отправляем время отправки всем
     } catch (err) {
       console.error('Ошибка при обработке ответов:', err);
     }
   });
+
 
   // Старт игры и таймера
   socket.on('start_game', (duration) => {
@@ -1331,7 +1437,7 @@ io.on('connection', (socket) => {
 });
 
 // Чтение и запись данных в файлы (обертки для асинхронных функций)
-async function readTeamsFile() {
+async function fetchTeamsFile() {
   try {
     const data = await fs.promises.readFile(teamsFilePath, 'utf-8');
     return JSON.parse(data);
@@ -1341,7 +1447,7 @@ async function readTeamsFile() {
   }
 }
 
-async function writeTeamsFile(data) {
+async function writeTeamsFile2(data) {
   try {
     await fs.promises.writeFile(teamsFilePath, JSON.stringify(data, null, 2));
   } catch (err) {

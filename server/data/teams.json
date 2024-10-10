@@ -3,18 +3,34 @@
     "username": "rob",
     "role": "user",
     "isPrepared": false,
-    "inGame": false,
+    "inGame": true,
+    "moves": 47,
     "answers": [],
+    "history": [
+      {
+        "blockNumber": 1,
+        "category": "Б (предметы)",
+        "timestamp": "2024-10-10T19:08:24.764Z"
+      },
+      {
+        "blockNumber": 2,
+        "category": "Б (предметы)",
+        "timestamp": "2024-10-10T19:14:38.380Z"
+      },
+      {
+        "blockNumber": 3,
+        "category": "С (транспорт и строения)",
+        "timestamp": "2024-10-10T19:22:43.954Z"
+      }
+    ],
     "reward": 0,
-    "points": 0,
-    "moves": 26,
-    "history": []
+    "points": 0
   },
   {
     "username": "ком 1",
     "role": "user",
     "isPrepared": false,
-    "inGame": false,
+    "inGame": true,
     "moves": 0,
     "answers": [],
     "history": [],

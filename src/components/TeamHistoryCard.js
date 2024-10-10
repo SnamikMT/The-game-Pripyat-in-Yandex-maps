@@ -6,7 +6,7 @@ import DocumentIcon from './document-icon.png';
 import VoiceMessageIcon from './voice-message-icon.png';
 import { Card, CardContent, Typography } from '@mui/material'; // Импортируйте компоненты Material-UI
 
-const TeamHistoryBlocks = ({ team }) => {
+const TeamHistoryBlocks = ({ team, newSearchHistory }) => {
   const [teamMoves, setTeamMoves] = useState([]);
   const [blocks, setBlocks] = useState([]);
 
@@ -15,11 +15,13 @@ const TeamHistoryBlocks = ({ team }) => {
     const fetchTeamMoves = async () => {
       try {
         const response = await axios.get(`${config.apiBaseUrl}/api/teams`);
+        console.log("Team moves data from API:", response.data);
         setTeamMoves(response.data);
       } catch (error) {
         console.error('Error fetching team moves:', error);
       }
     };
+    
 
     const fetchBlocks = async () => {
       try {
@@ -34,34 +36,60 @@ const TeamHistoryBlocks = ({ team }) => {
     fetchBlocks();
   }, []);
 
+  // Хук для обновления истории команды при каждом новом запросе
+  useEffect(() => {
+    if (newSearchHistory) {
+      console.log("New search history:", newSearchHistory);
+      setTeamMoves(prevMoves => {
+        const updatedMoves = prevMoves.map(teamMove => {
+          if (teamMove.username === team.username) {
+            const updatedHistory = [
+              ...teamMove.history,
+              ...newSearchHistory.filter(
+                newItem => !teamMove.history.some(
+                  existingItem => existingItem.blockNumber === newItem.blockNumber && existingItem.category === newItem.category
+                )
+              )
+            ];
+            return {
+              ...teamMove,
+              history: updatedHistory, // Обновляем историю без дубликатов
+            };
+          }
+          return teamMove;
+        });
+        console.log("Updated team moves without duplicates:", updatedMoves);
+        return updatedMoves;
+      });
+    }
+  }, [newSearchHistory, team.username]);
+  
+  
+
+  
   // Функция для поиска блока по номеру и категории
   const getBlockByNumberAndCategory = (blockNumber, category) => {
     if (!category) return null;
-  
+
     const categoryBlocks = blocks.find(
       blockCategory => blockCategory.category && blockCategory.category.toLowerCase() === category.toLowerCase()
     );
-  
+
     if (categoryBlocks) {
       const block = categoryBlocks.blocks.find(b => b.number === blockNumber);
       if (block) {
-        // Проверяем, что у блока есть аудиофайл, и устанавливаем полный путь
         const voiceMessagePreview = block.voiceMessageUrl ? `${config.apiBaseUrl}${block.voiceMessageUrl}` : "";
-        
-        // Возвращаем блок с обновленным путем к аудиофайлу
         return {
           ...block,
           voiceMessagePreview,
         };
       }
     }
-  
+
     console.log("Category not found");
     return null;
   };
-  
 
-  // Фильтруем и сортируем ходы команды для текущего пользователя
   const filteredTeamMoves = teamMoves
     .filter(t => t.username === team?.username)
     .map(team => ({
@@ -74,7 +102,6 @@ const TeamHistoryBlocks = ({ team }) => {
       {filteredTeamMoves.length > 0 ? (
         filteredTeamMoves.map((team, index) => (
           <div key={index}>
-            {/* <h3>Команда: {team.username}</h3> */}
             {team.history.length > 0 ? (
               team.history.map((historyItem, historyIndex) => {
                 const block = getBlockByNumberAndCategory(historyItem.blockNumber, historyItem.category);
@@ -105,16 +132,14 @@ const TeamHistoryBlocks = ({ team }) => {
                               <img src={`${config.apiBaseUrl}${block.image2Url}`} alt={block.title} style={{ width: '60%', marginBottom: '10px' }} />
                             )}
                             {block.voiceMessagePreview ? (
-                              <audio controls src={block.voiceMessagePreview} style={{ width: '100%', marginBottom: '10px' }} />
-                            ) : (
-                              console.log('Аудио не найдено для блока:', block)
-                            )}
+                            <audio controls src={block.voiceMessagePreview} style={{ width: '100%', marginBottom: '10px' }} />
+                          ) : null}
 
                           </div>
                         </CardContent>
                       </Card>
                     ) : (
-                      <p>Блок с номером {historyItem.blockNumber} и категорией {historyItem.category} не найден</p>
+                      <p></p>
                     )}
                   </div>
                 );
