@@ -91,11 +91,11 @@ const TeamHistoryBlocks = ({ team, newSearchHistory }) => {
   };
 
   const filteredTeamMoves = teamMoves
-    .filter(t => t.username === team?.username)
-    .map(team => ({
-      ...team,
-      history: team.history.sort((a, b) => a.blockNumber - b.blockNumber), // Сортируем по blockNumber
-    }));
+  .filter(t => t.username === team?.username)
+  .map(team => ({
+    ...team,
+    history: [...team.history].reverse(), // Реверсируем историю
+  }));
 
   return (
     <div>

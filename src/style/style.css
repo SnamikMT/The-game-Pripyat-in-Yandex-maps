@@ -710,8 +710,8 @@ table tr:nth-child(even) {
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
+  margin-top: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 60%; /* Фиксированная ширина для выравнивания */
 }
 
 .move-card {
@@ -868,7 +868,7 @@ h2, h3 {
   }
 
   .team-card {
-    width: 100%;
+    width: 90%;
   }
 
   .teams-table th, .teams-table td {
@@ -966,10 +966,8 @@ h2, h3 {
   .center-message {
     font-size: 15px;
   }
-  
-
+    
 }
-
 
 
 .searchCategory {
@@ -1095,4 +1093,111 @@ h2, h3 {
 
 .radio-text {
   margin-left: 8px; /* Отступ между радиокнопкой и текстом */
+}
+
+/* Посещение */
+.visits-tab {
+  padding: 20px;
+  background-color: #272727;
+  border-radius: 8px;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.visits-search-input {
+  margin-bottom: 20px;
+  padding: 10px;
+  width: 100%;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+}
+
+.visits-category {
+  margin-bottom: 20px;
+}
+
+.visits-category-title {
+  color: #f0f0f0;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.visits-block-card {
+  background-color: #363636;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.visits-block-title {
+  font-size: 18px;
+  color: #e0e0e0;
+  margin-bottom: 10px;
+}
+
+.visits-block-info {
+  margin-left: 20px;
+}
+
+.visits-block-status {
+  font-size: 16px;
+  color: #b0b0b0;
+}
+
+.visits-block-team-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.visits-block-team {
+  color: #ffffff;
+  background-color: #272727;
+  padding: 5px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.visits-block-empty {
+  color: #ff6363;
+  font-style: italic;
+}
+
+
+.tabs {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.tab-button.active {
+  background-color: #ffeb99;
+  color: #000;
+}
+
+.historyH {
+  font-size: 30px;
+}
+
+
+@media (max-width: 480px) {
+  .tabs {
+    margin-top: 10px;
+    width: 80%;
+    flex-direction: column;
+  }
+
+  .tab-button {
+    margin-top: 10px;
+  }
+
+  .historyH {
+    font-size: 20px;
+  }
+}
+
+
+.points-input {
+  border: none;
 }

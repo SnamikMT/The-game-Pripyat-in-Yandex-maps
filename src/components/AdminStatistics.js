@@ -168,79 +168,116 @@ const clearRewards = async () => {
   }
 };
 
-// Clear all data for all teams
-const clearAllData = async () => {
+ // Update points directly from input
+ const handlePointsChange = async (team, value) => {
+  const updatedTeams = teamsData.map((t) => {
+    if (t.username === team) {
+      return { ...t, points: parseInt(value, 10) || 0 }; // Обновляем очки команды
+    }
+    return t;
+  });
+  setTeamsData(updatedTeams);
+
   try {
-    const responses = await Promise.all(
-      teamsData.map(async (team) => {
-        const response = await fetch(`${config.apiBaseUrl}/api/teams/clear-all`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ team: team.username }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          throw new Error(`Error ${response.status}: ${errorData}`);
-        }
-
-        return response.json();
-      })
-    );
-
-    console.log('All data cleared successfully:', responses);
-
-    // Обновляем состояние команд
-    const updatedTeams = teamsData.map((team) => ({
-      ...team,
-      moves: 0,
-      points: 0,
-      reward: 0,
-    }));
-
-    setTeamsData(updatedTeams); // Обновляем состояние команд
-
-    setErrorMessage('Все данные успешно очищены!'); // Сообщение об успехе
+    // Update points on the server
+    await axios.post(`${config.apiBaseUrl}/api/teams/update-points`, {
+      team,
+      points: parseInt(value, 10) || 0,
+    });
   } catch (error) {
-    console.error('Ошибка при очистке всех данных:', error);
-    setErrorMessage('Ошибка при очистке всех данных. Попробуйте еще раз.'); // Сообщение об ошибке
+    setErrorMessage('Ошибка обновления очков команды');
+    console.error('Ошибка обновления очков:', error.response?.data || error.message);
   }
 };
 
-  return (
-    <div className="admin-statistics">
-      <h2>СТАТИСТИКА</h2>
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
+// Clear all data for all teams
+const confirmAndClearAllData = async () => {
+  const isConfirmed = window.confirm('Вы уверены, что хотите очистить все данные для всех команд?');
 
-      <h3>Прогресс</h3>
-      <table className="teams-table">
-        <thead>
-          <tr>
-            <th>Команда</th>
-            <th>Ходы</th>
-            <th>Очки</th>
-            <th>Награда</th>
+  if (isConfirmed) {
+    try {
+      const responses = await Promise.all(
+        teamsData.map(async (team) => {
+          const response = await fetch(`${config.apiBaseUrl}/api/teams/clear-all`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ team: team.username }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`Error ${response.status}: ${errorData}`);
+          }
+
+          return response.json();
+        })
+      );
+
+      console.log('All data cleared successfully:', responses);
+
+      // Обновляем состояние команд
+      const updatedTeams = teamsData.map((team) => ({
+        ...team,
+        moves: 0,
+        points: 0,
+        reward: 0,
+      }));
+
+      setTeamsData(updatedTeams); // Обновляем состояние команд
+
+      setErrorMessage('Все данные успешно очищены!'); // Сообщение об успехе
+    } catch (error) {
+      console.error('Ошибка при очистке всех данных:', error);
+      setErrorMessage('Ошибка при очистке всех данных. Попробуйте еще раз.'); // Сообщение об ошибке
+    }
+  } else {
+    // Если действие отменено
+    console.log('Очистка всех данных отменена');
+  }
+};
+
+return (
+  <div className="admin-statistics">
+    <h2>СТАТИСТИКА</h2>
+    {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+    <h3>Прогресс</h3>
+    <table className="teams-table">
+      <thead>
+        <tr>
+          <th>Команда</th>
+          <th>Ходы</th>
+          <th>Очки</th>
+          <th>Награда</th>
+        </tr>
+      </thead>
+      <tbody>
+        {teamsData.map((team) => (
+          <tr key={team.username}>
+            <td>{team.username}</td>
+            <td>{team.moves}</td>
+            <td>
+              <input
+                type="number"
+                value={team.points || 0}
+                onChange={(e) => handlePointsChange(team.username, e.target.value)}
+                min="0"
+                className="points-input" // Добавляем класс для стилизации
+              />
+            </td>
+            <td>{"$" + (team.reward ? team.reward.toFixed(2) : '0.00')}</td>
           </tr>
-        </thead>
-        <tbody>
-          {teamsData.map((team) => (
-            <tr key={team.username}>
-              <td>{team.username}</td>
-              <td>{team.moves}</td>
-              <td>{team.points}</td>
-              <td>{"$" + (team.reward ? team.reward.toFixed(2) : '0.00')}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        ))}
+      </tbody>
+    </table>
 
       {isAdmin && (
         <>
           <button onClick={calculateRewards} className="action-button gon">Рассчитать Гонорар</button>
           <button onClick={clearRewards} className="action-button">Очистить Гонорар</button>
-          <button onClick={clearAllData} className="action-button">Очистить Всё</button>
+          <button onClick={confirmAndClearAllData} className="action-button">Очистить Всё</button>
         </>
       )}
 

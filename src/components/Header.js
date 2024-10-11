@@ -212,6 +212,24 @@ const Header = ({
       setErrorMessage('Ошибка завершения игры');
     }
   };
+
+  const confirmAndClearHistory = async () => {
+    const isConfirmed = window.confirm('Вы уверены, что хотите очистить историю команд?');
+  
+    if (isConfirmed) {
+      try {
+        // Отправляем запрос на очистку истории
+        await axios.post(`${config.apiBaseUrl}/api/clear-history`);
+
+      } catch (error) {
+        console.error('Ошибка при очистке истории команд:', error);
+        setErrorMessage('Ошибка очистки истории');
+      }
+    } else {
+      // Если пользователь отменил действие, можно что-то сделать, если нужно
+      console.log('Очистка истории отменена');
+    }
+  };
   
 
   const toggleBurgerMenu = () => {
@@ -467,6 +485,7 @@ const Header = ({
               />
               <button onClick={handleStartGame} className="action-button">Запустить игру</button>
               <button onClick={handleEndGame} className="action-button">Завершить игру</button>
+              <button onClick={confirmAndClearHistory} className="action-button">Очистить историю</button>
             </div>
           )}
         </div>

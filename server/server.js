@@ -935,6 +935,29 @@ app.get('/api/teams-progress', (req, res) => {
   });
 });
 
+app.post('/api/clear-history', async (req, res) => {
+  try {
+    // Чтение файла с командами
+    const teamsData = await fss.readFile(path.join(__dirname, 'data', 'teams.json'), 'utf8');
+    let teams = JSON.parse(teamsData);
+
+    // Очищаем историю каждой команды
+    teams = teams.map(team => {
+      team.history = []; // Очищаем историю команды
+      return team;
+    });
+
+    // Сохраняем обновленный список команд
+    await fss.writeFile(path.join(__dirname, 'data', 'teams.json'), JSON.stringify(teams, null, 2));
+
+    res.status(200).json({ message: 'История команд успешно очищена' });
+  } catch (error) {
+    console.error('Ошибка при очистке истории команд:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+
 // Пример использования fss для асинхронных операций с файлами
 app.post('/api/start-game', async (req, res) => {
   const { duration } = req.body;
@@ -948,7 +971,6 @@ app.post('/api/start-game', async (req, res) => {
     teams = teams.map(team => {
       team.inGame = true;
       team.isPrepared = false; // Сброс флага готовности
-      team.history = []; // Очищаем историю команды
       return team;
     });
 
@@ -1098,6 +1120,37 @@ app.post('/api/teams/update-reward', async (req, res) => {
     res.status(500).json({ message: 'Failed to update reward' });
   }
 });
+
+// Эндпоинт для обновления очков команды
+app.post('/api/teams/update-points', async (req, res) => {
+  const { team, points } = req.body;
+
+  console.log(`Запрос на обновление очков для команды: ${team}, Очки: ${points}`);
+  
+  if (!team || points === undefined) {
+    return res.status(400).json({ message: 'Invalid request' });
+  }
+
+  try {
+    let teams = await readTeamsFile();
+
+    const teamIndex = teams.findIndex(t => t.username === team);
+    if (teamIndex === -1) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    // Обновляем только поле points
+    teams[teamIndex].points = points;
+
+    await writeTeamsFile(teams);
+
+    res.json({ message: 'Points updated successfully', team: teams[teamIndex] });
+  } catch (error) {
+    console.error('Error updating points:', error);
+    res.status(500).json({ message: 'Failed to update points' });
+  }
+});
+
 
 // Эндпоинт для очистки гонораров
 app.post('/api/teams/clear-reward', async (req, res) => {
