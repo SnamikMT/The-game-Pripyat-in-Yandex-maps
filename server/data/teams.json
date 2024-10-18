@@ -20,5 +20,16 @@
     "history": [],
     "reward": 246244,
     "points": 246244
+  },
+  {
+    "username": "ком 2",
+    "role": "user",
+    "isPrepared": false,
+    "inGame": false,
+    "moves": 0,
+    "answers": [],
+    "history": [],
+    "reward": 0,
+    "points": 0
   }
 ]

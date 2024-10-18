@@ -152,6 +152,13 @@ const Header = ({
   
     socket.emit('force_message', forcedMessage);
   };
+
+  const handleSendForcedMessage2 = () => {
+    const forcedMessage = `Если вы хотите попасть в помещение по конкретному адресу, а у вас не получается - попробуйте проникнуть в него через крышу`;
+  
+    socket.emit('force_message2', forcedMessage);
+  };
+  
   
 
   const handleStartGame = async () => {
@@ -492,6 +499,9 @@ const Header = ({
 
         <button onClick={handleSendForcedMessage} className="action-button">
           Отправить игрокам сообщение(Юпитер)
+        </button>
+        <button onClick={handleSendForcedMessage2} className="action-button">
+          Отправить игрокам сообщение(Подсказка)
         </button>
       </div>
     )}

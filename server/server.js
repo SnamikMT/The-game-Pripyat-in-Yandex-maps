@@ -103,6 +103,21 @@ async function readTeamsFile() {
   }
 }
 
+// Добавление новой команды
+async function addTeam(newTeam) {
+  try {
+    const teams = await readTeamsFile();
+    teams.push(newTeam);
+
+    await fs.promises.writeFile(teamsFilePath, JSON.stringify(teams, null, 2));
+    console.log('Команда добавлена успешно');
+    return newTeam;
+  } catch (err) {
+    console.error('Ошибка при добавлении команды:', err);
+    throw new Error('Could not add team');
+  }
+}
+
 // Запись данных в файл команд
 let isWriting = false;
 
@@ -411,7 +426,6 @@ const saveQuestions = async (questions) => {
 loadUsers();
 loadAnswers();
 
-
 // Маршрут для записи действия по категории
 app.post('/api/category-action', async (req, res) => {
   const { teamName, category } = req.body;
@@ -647,7 +661,7 @@ app.get("/api/users", (req, res) => {
 });
 
 // Создать нового пользователя
-app.post("/api/users", (req, res) => {
+app.post("/api/users", async (req, res) => {
   const { username, password, role } = req.body;
 
   if (!username || !password || !role) {
@@ -665,9 +679,34 @@ app.post("/api/users", (req, res) => {
   users.push(newUser);
   saveUsers();
 
-  io.emit("userAdded", newUser);
+  // Добавляем нового пользователя в teams.json
+  try {
+    const teams = await readTeamsFile();
+    
+    const newTeam = {
+      username: trimmedUsername,
+      role,
+      isPrepared: false,
+      inGame: false,
+      moves: 0,
+      answers: [],
+      history: [],
+      reward: 0,
+      points: 0,
+    };
+    
+    teams.push(newTeam);
 
-  res.status(201).json(newUser);
+    await writeTeamsFile(teams);
+
+    // Сообщаем всем клиентам, что пользователь был добавлен
+    io.emit("userAdded", newUser);
+
+    res.status(201).json(newUser);
+  } catch (err) {
+    console.error("Ошибка при добавлении команды в teams.json:", err);
+    res.status(500).json({ message: "Ошибка создания пользователя и записи в команды" });
+  }
 });
 
 // Обновить пользователя (включая статус скрытия)
@@ -1475,10 +1514,16 @@ io.on('connection', (socket) => {
   });
   
 
-  // Принудительное завершение игры
-  socket.on('force_message', (message) => {
-    io.emit('display_message', message);
-  });
+    // Принудительное завершение игры
+    socket.on('force_message', (message) => {
+      io.emit('display_message', message);
+    });
+
+    // Обработка второго типа сообщения
+    socket.on('force_message2', (message) => {
+      io.emit('display_hint', message);
+    });
+
 
   // Завершение игры вручную
   socket.on('game_ended', () => {

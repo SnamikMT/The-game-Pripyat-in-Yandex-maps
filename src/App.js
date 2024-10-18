@@ -34,6 +34,7 @@ const App = () => {
   const [answersData, setAnswersData] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [message, setMessage] = useState(null);
+  const [hintMessage, setHintMessage] = useState("");
 
   // Fetch questions when component mounts
   useEffect(() => {
@@ -143,9 +144,14 @@ const App = () => {
     socket.on('display_message', (message) => {
       setMessage(message);
     });
-
+  
+    socket.on('display_hint', (hint) => {
+      setHintMessage(hint);
+    });
+  
     return () => {
       socket.off('display_message');
+      socket.off('display_hint');
     };
   }, []);
 
@@ -280,8 +286,8 @@ const App = () => {
 
   const closePopup = () => {
     setMessage(null);
+    setHintMessage(null);
   };
-  
 
   return (
     <TimerProvider socket={socket}>
@@ -357,6 +363,7 @@ const App = () => {
             </div>
 
             {message && <MessagePopup message={{ time: "СООБЩЕНИЕ", text: message.replace(/\n/g, "<br />") }} onClose={closePopup} />}
+            {hintMessage && <MessagePopup message={{ time: "Подсказка", text: hintMessage.replace(/\n/g, "<br />") }} onClose={closePopup} />}
           </>
         ) : (
           <Login onLogin={handleLogin} />

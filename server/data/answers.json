@@ -1,36 +1,3 @@
-[
-  {
-    "team": "rob",
-    "answers": {
-      "0": {
-        "text": "gfsd",
-        "graded": false
-      },
-      "1": {
-        "text": "gfds",
-        "graded": false
-      },
-      "2": {
-        "text": "gdfs",
-        "graded": false
-      },
-      "3": {
-        "text": "gfds",
-        "graded": false
-      },
-      "4": {
-        "text": "dsgfsdg",
-        "graded": false
-      },
-      "5": {
-        "text": "gfds",
-        "graded": false
-      },
-      "6": {
-        "text": "dfsg",
-        "graded": false
-      }
-    },
-    "submittedAt": "2024-10-11T11:30:30.849Z"
-  }
-]
+{
+  "answers": []
+}

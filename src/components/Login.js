@@ -4,7 +4,6 @@ import axios from 'axios';
 
 import config from './config';
 
-
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +33,6 @@ const Login = ({ onLogin }) => {
       }
     }
   };
-  
 
   return (
     <Container maxWidth="sm" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -56,7 +54,7 @@ const Login = ({ onLogin }) => {
             label="Название команды"
             variant="outlined"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => setUsername(e.target.value.toLowerCase())} // Преобразуем в нижний регистр
             style={{ marginBottom: 20 }}
           />
           <TextField
@@ -73,9 +71,10 @@ const Login = ({ onLogin }) => {
             fullWidth 
             variant="contained" 
             sx={{ 
-              backgroundColor: '#ed3f3f',
-              color: '#000', 
-              '&:hover': { backgroundColor: '#c12e2e' } 
+              backgroundColor: '#1f1f1f',  // Белый цвет фона
+              color: 'white',  // Черный цвет текста
+              fontWeight: 'bold',  // Жирный текст
+              '&:hover': { backgroundColor: '#ffeb99', color: '#1f1f1f' }  // Цвет при наведении
             }} 
             type="submit"
           >
