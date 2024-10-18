@@ -4,22 +4,22 @@
     "role": "user",
     "isPrepared": false,
     "inGame": true,
-    "moves": 0,
+    "moves": 10,
     "answers": [],
     "history": [],
-    "reward": 0,
-    "points": 0
+    "reward": 40,
+    "points": 20
   },
   {
     "username": "ком 1",
     "role": "user",
     "isPrepared": false,
     "inGame": true,
-    "moves": 0,
+    "moves": 10,
     "answers": [],
     "history": [],
-    "reward": 246244,
-    "points": 246244
+    "reward": 4000,
+    "points": 200
   },
   {
     "username": "ком 2",

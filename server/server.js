@@ -1108,27 +1108,6 @@ app.post('/api/clear-answers', (req, res) => {
   });
 });
 
-// // Эндпоинт для отправки ответов
-// app.post('/api/send-answers', (req, res) => {
-//   const { team, answers } = req.body;
-
-//   // Логика для сохранения ответов в файл answers.json
-//   const newAnswer = { team, answers };
-//   answersData.push(newAnswer); // или обновляем ответы
-
-//   fs.writeFile(answersFilePath, JSON.stringify(answersData, null, 2), (err) => {
-//     if (err) {
-//       console.error('Ошибка записи в answers.json:', err);
-//       return res.status(500).json({ message: 'Ошибка отправки ответов' });
-//     }
-
-//     // Оповещаем всех подключенных клиентов (особенно админов) об обновлении ответов
-//     io.emit('new_answer', newAnswer);
-
-//     res.status(200).json({ message: 'Ответы отправлены' });
-//   });
-// });
-
 
 // Эндпоинт для расчета гонораров
 app.post('/api/teams/update-reward', async (req, res) => {

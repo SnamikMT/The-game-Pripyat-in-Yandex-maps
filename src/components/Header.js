@@ -47,6 +47,7 @@ const Header = ({
 
   const { timerDuration } = useContext(TimerContext);
 
+  const [isContactsVisible, setIsContactsVisible] = useState(false);
 
   // Загрузка вопросов при первом рендере
   useEffect(() => {
@@ -242,6 +243,8 @@ const Header = ({
   const toggleBurgerMenu = () => {
     setBurgerMenuOpen(!burgerMenuOpen);
   };
+;
+
 
   return (
     <header className="header-container">
@@ -497,12 +500,33 @@ const Header = ({
           )}
         </div>
 
+        <div className='game-section'>
+          <h3 onClick={() => setIsContactsVisible(!isContactsVisible)} className="toggle-section-button">
+            {isContactsVisible ? 'Скрыть контакты' : 'Контакты'}
+          </h3>
+          {isContactsVisible && (
+            <div className="game-section">
+              <div className="contacts-section">
+                <p><strong>Telegram:</strong> <a href="https://t.me/Snamik" target="_blank" rel="noopener noreferrer">https://t.me/Snamik</a></p>
+                <p><strong>Почта:</strong> <a href="mailto:makswarpten@mail.ru">makswarpten@mail.ru</a></p>
+                <p><strong>Телефон:</strong> <a href="tel:+79807454816">+79807454816</a></p>
+                
+                {/* Веселая надпись с эмодзи */}
+                <div className="footer-note">
+                  😊 Прибыльных и веселых игр! 🎉
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <button onClick={handleSendForcedMessage} className="action-button">
           Отправить игрокам сообщение(Юпитер)
         </button>
         <button onClick={handleSendForcedMessage2} className="action-button">
           Отправить игрокам сообщение(Подсказка)
         </button>
+
       </div>
     )}
   </div>

@@ -1161,7 +1161,7 @@ h2, h3 {
 }
 
 .visits-block-empty {
-  color: #ff6363;
+  color: #ffeb99;
   font-style: italic;
 }
 
@@ -1200,4 +1200,35 @@ h2, h3 {
 
 .points-input {
   border: none;
+}
+
+
+.contacts-section {
+  background-color: #ffffff;
+  border: 1px solid #272727;
+  padding: 15px;             /* Внутренние отступы */
+  border-radius: 8px;        /* Скругленные углы */
+  margin-top: 10px;          /* Отступ сверху */
+}
+
+.contacts-section p {
+  font-size: 16px;           /* Увеличенный шрифт для текста */
+  color: #333;               /* Тёмно-серый цвет текста */
+}
+
+.contacts-section a {
+  color: #007bff;            /* Цвет ссылки */
+  text-decoration: none;     /* Убираем подчеркивание */
+}
+
+.contacts-section a:hover {
+  text-decoration: underline; /* Подчеркивание при наведении */
+}
+
+.contacts-section .footer-note {
+  margin-top: 15px;          /* Отступ сверху для надписи внизу */
+  text-align: center;        /* Центровка текста */
+  font-size: 18px;           /* Размер шрифта */
+  font-weight: bold;         /* Жирный текст */
+  color: #28a745;            /* Зеленый цвет текста */
 }

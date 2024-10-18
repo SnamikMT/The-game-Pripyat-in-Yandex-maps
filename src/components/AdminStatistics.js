@@ -113,21 +113,20 @@ const handleScoreChange = async (team, questionIndex, score) => {
   }
 };
 
-  // Calculate rewards for each team
-  // Calculate rewards for each team
+
 const calculateRewards = async () => {
   try {
     const updatedTeams = teamsData.map((team) => {
-      const moves = team.moves || 1; // Prevent division by zero
-      const points = team.points || 0;
-      const reward = points / moves;
+      const moves = team.moves || 1;  // Если ходы не указаны, используем 1, чтобы избежать деления на 0
+      const points = team.points || 0;  // Если очки не указаны, используем 0
+      const reward = (points * points) / moves;  // Формула: Очки^2 / Ходы
 
-      return { ...team, reward: reward };
+      return { ...team, reward: reward };  // Обновляем команду с рассчитанной наградой
     });
 
-    setTeamsData(updatedTeams); // Update local state with calculated rewards
+    setTeamsData(updatedTeams);  // Обновляем состояние команд на фронтенде
 
-    // Update rewards on the server
+    // Отправляем обновленные данные на сервер
     await Promise.all(updatedTeams.map(async (team) => {
       const response = await axios.post(`${config.apiBaseUrl}/api/teams/update-reward`, {
         team: team.username,
@@ -136,22 +135,23 @@ const calculateRewards = async () => {
       console.log(`Награда для команды ${team.username} успешно обновлена:`, response.data);
     }));
     
-    setErrorMessage('Награды успешно рассчитаны!'); // Success message
+    setErrorMessage('Награды успешно рассчитаны!');  // Сообщение об успешном расчете
   } catch (error) {
     console.error('Ошибка при обновлении наград:', error);
-    setErrorMessage('Ошибка при расчете наград. Попробуйте еще раз.'); // Error message
+    setErrorMessage('Ошибка при расчете наград. Попробуйте еще раз.');  // Сообщение об ошибке
   }
 };
 
-// Clear rewards for all teams
+
+
 const clearRewards = async () => {
   try {
     const updatedTeams = teamsData.map((team) => ({
       ...team,
-      reward: 0, // Reset reward to zero
+      reward: 0, 
     }));
 
-    setTeamsData(updatedTeams); // Update local state
+    setTeamsData(updatedTeams);
 
     // Clear rewards on the server
     await Promise.all(updatedTeams.map(async (team) => {
@@ -168,7 +168,7 @@ const clearRewards = async () => {
   }
 };
 
- // Update points directly from input
+
  const handlePointsChange = async (team, value) => {
   const updatedTeams = teamsData.map((t) => {
     if (t.username === team) {
@@ -233,7 +233,7 @@ const confirmAndClearAllData = async () => {
       setErrorMessage('Ошибка при очистке всех данных. Попробуйте еще раз.'); // Сообщение об ошибке
     }
   } else {
-    // Если действие отменено
+
     console.log('Очистка всех данных отменена');
   }
 };
@@ -264,10 +264,10 @@ return (
                 value={team.points || 0}
                 onChange={(e) => handlePointsChange(team.username, e.target.value)}
                 min="0"
-                className="points-input" // Добавляем класс для стилизации
+                className="points-input"
               />
             </td>
-            <td>{"$" + (team.reward ? team.reward.toFixed(2) : '0.00')}</td>
+            <td>{(team.reward ? team.reward.toFixed(2) : '0.00')}</td>
           </tr>
         ))}
       </tbody>
@@ -316,7 +316,7 @@ return (
                                       name={`score-${answer.team}-${qIndex}`}
                                       value={minScore + i}
                                       onChange={() => handleScoreChange(answer.team, qIndex, minScore + i)}
-                                      className="radio-input" // добавляем класс для стилизации
+                                      className="radio-input"
                                     />
                                     <span className="radio-text">{minScore + i}</span>
                                   </label>
