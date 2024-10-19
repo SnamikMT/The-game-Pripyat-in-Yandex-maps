@@ -517,7 +517,7 @@ const performSearch = async () => {
         </Grid>
       </Grid>
 
-        {foundBlock && (
+        {foundBlock && team?.role === "admin" &&(
           <Card style={{ marginTop: "20px" }}>
           <CardContent>
             <div className="categoryHead">

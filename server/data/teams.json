@@ -4,9 +4,15 @@
     "role": "user",
     "isPrepared": false,
     "inGame": true,
-    "moves": 10,
+    "moves": 11,
     "answers": [],
-    "history": [],
+    "history": [
+      {
+        "blockNumber": 4,
+        "category": "А (люди)",
+        "timestamp": "2024-10-19T07:44:06.758Z"
+      }
+    ],
     "reward": 40,
     "points": 20
   },
@@ -25,7 +31,7 @@
     "username": "ком 2",
     "role": "user",
     "isPrepared": false,
-    "inGame": false,
+    "inGame": true,
     "moves": 0,
     "answers": [],
     "history": [],
