@@ -114,57 +114,99 @@ const handleScoreChange = async (team, questionIndex, score) => {
 };
 
 
-const calculateRewards = async () => {
-  try {
-    const updatedTeams = teamsData.map((team) => {
-      const moves = team.moves || 1;  // Если ходы не указаны, используем 1, чтобы избежать деления на 0
-      const points = team.points || 0;  // Если очки не указаны, используем 0
-      const reward = (points * points) / moves;  // Формула: Очки^2 / Ходы
+// Clear all data for all teams
+const confirmAndClearAllData = async () => {
+  const isConfirmed = window.confirm('Вы уверены, что хотите очистить все данные для всех команд?');
 
-      return { ...team, reward: reward };  // Обновляем команду с рассчитанной наградой
-    });
-
-    setTeamsData(updatedTeams);  // Обновляем состояние команд на фронтенде
-
-    // Отправляем обновленные данные на сервер
-    await Promise.all(updatedTeams.map(async (team) => {
-      const response = await axios.post(`${config.apiBaseUrl}/api/teams/update-reward`, {
-        team: team.username,
-        reward: team.reward,
+  if (isConfirmed) {
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/api/teams/clear-all`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      console.log(`Награда для команды ${team.username} успешно обновлена:`, response.data);
-    }));
-    
-    setErrorMessage('Награды успешно рассчитаны!');  // Сообщение об успешном расчете
-  } catch (error) {
-    console.error('Ошибка при обновлении наград:', error);
-    setErrorMessage('Ошибка при расчете наград. Попробуйте еще раз.');  // Сообщение об ошибке
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error ${response.status}: ${errorData}`);
+      }
+
+      const result = await response.json();
+      console.log('Все данные успешно очищены:', result);
+
+      // Обновляем состояние команд
+      const updatedTeams = teamsData.map((team) => ({
+        ...team,
+        moves: 0,
+        points: 0,
+        reward: 0,
+      }));
+
+      setTeamsData(updatedTeams); // Обновляем состояние команд
+      setErrorMessage('Все данные успешно очищены!'); // Сообщение об успехе
+    } catch (error) {
+      console.error('Ошибка при очистке всех данных:', error);
+      setErrorMessage('Ошибка при очистке всех данных. Попробуйте еще раз.'); // Сообщение об ошибке
+    }
+  } else {
+    console.log('Очистка всех данных отменена');
   }
 };
 
-
-
 const clearRewards = async () => {
   try {
+    // Очищаем гонорары для всех команд
+    const response = await fetch(`${config.apiBaseUrl}/api/teams/clear-reward`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Error ${response.status}: ${errorData}`);
+    }
+
+    const result = await response.json();
+    console.log('Все гонорары успешно очищены:', result);
+
+    // Обновляем состояние команд
     const updatedTeams = teamsData.map((team) => ({
       ...team,
       reward: 0, 
     }));
 
-    setTeamsData(updatedTeams);
-
-    // Clear rewards on the server
-    await Promise.all(updatedTeams.map(async (team) => {
-      const response = await axios.post(`${config.apiBaseUrl}/api/teams/clear-reward`, {
-        team: team.username,
-      });
-      console.log(`Гонорар для команды ${team.username} успешно очищен:`, response.data);
-    }));
-
-    setErrorMessage('Все гонорары успешно очищены!'); // Success message
+    setTeamsData(updatedTeams); // Обновляем состояние команд
+    setErrorMessage('Все гонорары успешно очищены!'); // Сообщение об успехе
   } catch (error) {
     console.error('Ошибка при очистке гонораров:', error);
-    setErrorMessage('Ошибка при очистке гонораров. Попробуйте еще раз.'); // Error message
+    setErrorMessage('Ошибка при очистке гонораров. Попробуйте еще раз.'); // Сообщение об ошибке
+  }
+};
+
+const calculateRewards = async () => {
+  try {
+    // Отправляем запрос на сервер для расчета наград для всех команд
+    const response = await fetch(`${config.apiBaseUrl}/api/teams/calculate-rewards`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Ошибка при расчете наград: ${response.status} ${errorData}`);
+    }
+
+    const updatedTeams = await response.json();
+    setTeamsData(updatedTeams);  // Обновляем состояние команд на фронтенде
+    setErrorMessage('Награды успешно рассчитаны!');  // Сообщение об успешном расчете
+  } catch (error) {
+    console.error('Ошибка при обновлении наград:', error);
+    setErrorMessage('Ошибка при расчете наград. Попробуйте еще раз.');  // Сообщение об ошибке
   }
 };
 
@@ -187,54 +229,6 @@ const clearRewards = async () => {
   } catch (error) {
     setErrorMessage('Ошибка обновления очков команды');
     console.error('Ошибка обновления очков:', error.response?.data || error.message);
-  }
-};
-
-// Clear all data for all teams
-const confirmAndClearAllData = async () => {
-  const isConfirmed = window.confirm('Вы уверены, что хотите очистить все данные для всех команд?');
-
-  if (isConfirmed) {
-    try {
-      const responses = await Promise.all(
-        teamsData.map(async (team) => {
-          const response = await fetch(`${config.apiBaseUrl}/api/teams/clear-all`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ team: team.username }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.text();
-            throw new Error(`Error ${response.status}: ${errorData}`);
-          }
-
-          return response.json();
-        })
-      );
-
-      console.log('All data cleared successfully:', responses);
-
-      // Обновляем состояние команд
-      const updatedTeams = teamsData.map((team) => ({
-        ...team,
-        moves: 0,
-        points: 0,
-        reward: 0,
-      }));
-
-      setTeamsData(updatedTeams); // Обновляем состояние команд
-
-      setErrorMessage('Все данные успешно очищены!'); // Сообщение об успехе
-    } catch (error) {
-      console.error('Ошибка при очистке всех данных:', error);
-      setErrorMessage('Ошибка при очистке всех данных. Попробуйте еще раз.'); // Сообщение об ошибке
-    }
-  } else {
-
-    console.log('Очистка всех данных отменена');
   }
 };
 

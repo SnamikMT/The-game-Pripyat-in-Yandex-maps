@@ -4,27 +4,21 @@
     "role": "user",
     "isPrepared": false,
     "inGame": true,
-    "moves": 11,
+    "moves": 2,
     "answers": [],
-    "history": [
-      {
-        "blockNumber": 4,
-        "category": "А (люди)",
-        "timestamp": "2024-10-19T07:44:06.758Z"
-      }
-    ],
-    "reward": 40,
-    "points": 20
+    "history": [],
+    "reward": 72,
+    "points": 12
   },
   {
     "username": "ком 1",
     "role": "user",
     "isPrepared": false,
     "inGame": true,
-    "moves": 10,
+    "moves": 16,
     "answers": [],
     "history": [],
-    "reward": 4000,
+    "reward": 2500,
     "points": 200
   },
   {
@@ -32,10 +26,32 @@
     "role": "user",
     "isPrepared": false,
     "inGame": true,
-    "moves": 0,
+    "moves": 3,
     "answers": [],
     "history": [],
-    "reward": 0,
-    "points": 0
+    "reward": 5.333333333333333,
+    "points": 4
+  },
+  {
+    "username": "test",
+    "role": "user",
+    "isPrepared": false,
+    "inGame": true,
+    "moves": 2,
+    "answers": [],
+    "history": [],
+    "reward": 200,
+    "points": 20
+  },
+  {
+    "username": "ком 3",
+    "role": "user",
+    "isPrepared": false,
+    "inGame": true,
+    "moves": 14,
+    "answers": [],
+    "history": [],
+    "reward": 1.1428571428571428,
+    "points": 4
   }
 ]

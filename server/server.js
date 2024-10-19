@@ -87,55 +87,42 @@ const writeAnswersFile = async (answers) => {
 // Чтение данных из файла команд
 async function readTeamsFile() {
   try {
-    const data = await fs.promises.readFile(teamsFilePath, 'utf-8');
-    
-    const teams = JSON.parse(data);
-
-    // Проверка, что данные - массив
-    if (!Array.isArray(teams)) {
-      throw new Error('Parsed data is not an array');
-    }
-
-    return teams;
-  } catch (err) {
-    console.error('Ошибка чтения файла команд или парсинга данных:', err);
-    return [];
+      const data = await fs.promises.readFile(teamsFilePath, 'utf-8');
+      if (data.trim() === '') {
+          throw new Error('Файл пустой');
+      }
+      return JSON.parse(data);
+  } catch (error) {
+      console.error('Ошибка чтения файла команд или парсинга данных:', error);
+      throw error; // Или обработайте ошибку другим способом
   }
 }
 
-// Добавление новой команды
-async function addTeam(newTeam) {
-  try {
-    const teams = await readTeamsFile();
-    teams.push(newTeam);
-
-    await fs.promises.writeFile(teamsFilePath, JSON.stringify(teams, null, 2));
-    console.log('Команда добавлена успешно');
-    return newTeam;
-  } catch (err) {
-    console.error('Ошибка при добавлении команды:', err);
-    throw new Error('Could not add team');
-  }
-}
 
 // Запись данных в файл команд
 let isWriting = false;
 
-const writeTeamsFile = async (data) => {
-  if (isWriting) return; // Если запись уже идет, игнорируем новые вызовы
-  isWriting = true; // Устанавливаем блокировку
+async function writeTeamsFile(teams) {
+  if (isWriting) {
+    console.log('Попытка записи в файл, когда запись уже выполняется.');
+    throw new Error('Запись в файл уже выполняется');
+  }
+
+  console.log('Начинаем запись в файл...');
+  isWriting = true;
 
   try {
-    await fs.promises.writeFile(teamsFilePath, JSON.stringify(data, null, 2));
-    console.log('Данные успешно записаны в файл:', teamsFilePath);
-  } catch (err) {
-    console.error('Ошибка записи файла команд:', err);
+    await fs.promises.writeFile(teamsFilePath, JSON.stringify(teams, null, 2));
+    // Ваш код для записи в файл
+    console.log('Запись завершена успешно.');
+  } catch (error) {
+    console.error('Ошибка при записи в файл:', error);
+    throw error;
   } finally {
-    isWriting = false; // Снимаем блокировку
+    isWriting = false;
+    console.log('Запись в файл завершена, переменная isWriting сброшена.');
   }
-};
-
-
+}
 
 
 // Чтение данных из файла answers.json
@@ -405,7 +392,7 @@ const loadQuestions = async () => {
   try {
     const data = await fs.promises.readFile(questionsFilePath, 'utf8');
     const questions = JSON.parse(data);
-    console.log("Loaded questions: ", questions); // Лог для проверки
+
     return questions;
   } catch (error) {
     console.error('Ошибка при чтении файла с вопросами:', error);
@@ -533,7 +520,6 @@ app.get('/api/get-teams-history', async (req, res) => {
 app.get('/api/teams', async (req, res) => {
   try {
     const teams = await readTeamsFile(); // Используем await для асинхронного чтения
-    console.log('Serving teams:', teams); // Убедитесь, что команды выводятся
     res.json(teams); // Возвращаем команды клиенту
   } catch (error) {
     console.error('Error fetching teams:', error);
@@ -1109,35 +1095,31 @@ app.post('/api/clear-answers', (req, res) => {
 });
 
 
-// Эндпоинт для расчета гонораров
-app.post('/api/teams/update-reward', async (req, res) => {
-  const { team, reward } = req.body;
-
-  console.log(`Запрос на обновление награды для команды: ${team}, Награда: ${reward}`);
-  
-  if (!team || reward === undefined) {
-    return res.status(400).json({ message: 'Invalid request' });
-  }
-
+// Эндпоинт для расчета наград для всех команд
+app.post('/api/teams/calculate-rewards', async (req, res) => {
   try {
     let teams = await readTeamsFile();
+    console.log('Текущие команды:', teams);
 
-    const teamIndex = teams.findIndex(t => t.username === team);
-    if (teamIndex === -1) {
-      return res.status(404).json({ message: 'Team not found' });
-    }
+    // Расчет награды для каждой команды
+    teams = teams.map(team => {
+      const moves = team.moves || 1;  // Если ходы не указаны, используем 1
+      const points = team.points || 0;  // Если очки не указаны, используем 0
+      const reward = (points * points) / moves;  // Формула: Очки^2 / Ходы
 
-    // Обновляем только поле reward
-    teams[teamIndex].reward = reward;
+      return { ...team, reward };  // Обновляем команду с рассчитанной наградой
+    });
 
-    await writeTeamsFile(teams);
-
-    res.json({ message: 'Reward updated successfully', team: teams[teamIndex] });
+    console.log('Обновленные команды с наградами:', JSON.stringify(teams, null, 2));
+    
+    await writeTeamsFile(teams);  // Сохраняем обновленные данные в файл
+    res.json(teams);  // Возвращаем обновленные команды
   } catch (error) {
-    console.error('Error updating reward:', error);
-    res.status(500).json({ message: 'Failed to update reward' });
+    console.error('Ошибка при расчете наград:', error);
+    res.status(500).json({ message: 'Не удалось рассчитать награды.' });
   }
 });
+
 
 // Эндпоинт для обновления очков команды
 app.post('/api/teams/update-points', async (req, res) => {
@@ -1152,7 +1134,8 @@ app.post('/api/teams/update-points', async (req, res) => {
   try {
     let teams = await readTeamsFile();
 
-    const teamIndex = teams.findIndex(t => t.username === team);
+    const teamIndex = teams.findIndex(t => t.username.trim().toLowerCase() === team.trim().toLowerCase());
+
     if (teamIndex === -1) {
       return res.status(404).json({ message: 'Team not found' });
     }
@@ -1170,67 +1153,52 @@ app.post('/api/teams/update-points', async (req, res) => {
 });
 
 
-// Эндпоинт для очистки гонораров
+// Эндпоинт для очистки гонораров для всех команд
 app.post('/api/teams/clear-reward', async (req, res) => {
-  const { team } = req.body;
-
-  if (!team) {
-    return res.status(400).json({ message: 'Invalid request' });
-  }
-
   try {
     let teams = await readTeamsFile();
+    console.log('Текущие данные команд:', teams);
 
-    const teamIndex = teams.findIndex(t => t.username === team);
-    if (teamIndex === -1) {
-      return res.status(404).json({ message: 'Team not found' });
-    }
-
-    // Очищаем только поле reward
-    teams[teamIndex].reward = 0;
+    // Очищаем поле reward для всех команд
+    teams.forEach(team => {
+      team.reward = 0;
+    });
 
     await writeTeamsFile(teams);
 
-    // Убедитесь, что возвращаете только нужные данные
-    const { reward, points, moves, username } = teams[teamIndex];
-    res.json({ message: 'Reward cleared successfully', team: { username, reward, points, moves } });
+    res.json({ message: 'Гонорар очищен для всех команд', teams });
   } catch (error) {
-    console.error('Error clearing reward:', error);
-    res.status(500).json({ message: 'Failed to clear reward' });
+    console.error('Ошибка при очистке гонораров:', error);
+    res.status(500).json({ message: 'Не удалось очистить гонорар.' });
   }
 });
 
-// Эндпоинт для полной очистки данных команды
+
+// Эндпоинт для полной очистки данных всех команд
 app.post('/api/teams/clear-all', async (req, res) => {
-  const { team } = req.body;
-
-  if (!team) {
-    return res.status(400).json({ message: 'Invalid request' });
-  }
-
   try {
     let teams = await readTeamsFile();
 
-    const teamIndex = teams.findIndex(t => t.username === team);
-    if (teamIndex === -1) {
-      return res.status(404).json({ message: 'Team not found' });
-    }
+    console.log('Текущие данные команд перед очисткой:', JSON.stringify(teams, null, 2));
 
-    // Очищаем поля points, moves и reward
-    teams[teamIndex].reward = 0;
-    teams[teamIndex].points = 0;
-    teams[teamIndex].moves = 0;
+    // Очищаем поля reward, points и moves для всех команд
+    teams.forEach(team => {
+      team.reward = 0;
+      team.points = 0;
+      team.moves = 0;
+    });
+
+    console.log('Запись данных в файл после очистки:', JSON.stringify(teams, null, 2));
 
     await writeTeamsFile(teams);
 
-    // Убедитесь, что возвращаете только нужные данные
-    const { username, reward, points, moves } = teams[teamIndex];
-    res.json({ message: 'All data cleared successfully', team: { username, reward, points, moves } });
+    res.json({ message: 'Все данные очищены для всех команд', teams });
   } catch (error) {
-    console.error('Error clearing all data:', error);
-    res.status(500).json({ message: 'Failed to clear all data' });
+    console.error('Ошибка при очистке всех данных:', error);
+    res.status(500).json({ message: 'Не удалось очистить все данные.' });
   }
 });
+
 
 
 // Эндпоинт для обновления баллов команды
