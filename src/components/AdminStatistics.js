@@ -51,6 +51,24 @@ const AdminStatistics = ({ team }) => {
     };
   }, []);
 
+  // Listen for moves update from Socket.io
+  useEffect(() => {
+    const handleMoveUpdate = (updatedTeam) => {
+      setTeamsData((prevTeams) => 
+        prevTeams.map((team) => 
+          team.username === updatedTeam.username ? { ...team, moves: updatedTeam.moves } : team
+        )
+      );
+    };
+
+    socket.on('move_update', handleMoveUpdate);
+
+    return () => {
+      socket.off('move_update', handleMoveUpdate);
+    };
+  }, []);
+
+
   // Listen for new teams joining via Socket.io
   useEffect(() => {
     const handleNewTeam = (newTeam) => {

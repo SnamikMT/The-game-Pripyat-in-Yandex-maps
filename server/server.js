@@ -756,11 +756,30 @@ app.post('/api/join-game', (req, res) => {
   }
 });
 
-// Эндпоинт для обновления ходов
+// Эндпоинт для обновления ходов команды
 app.post('/api/update-moves', async (req, res) => {
-  const { teamName } = req.body; // Получите имя команды из запроса
-  const result = await updateMoves(teamName);
-  res.json(result);
+  try {
+    const { teamName } = req.body;  // Получаем имя команды из тела запроса
+    if (!teamName) {
+      return res.status(400).json({ success: false, message: 'Не указано имя команды' });
+    }
+
+    // Обновляем количество ходов
+    const result = await updateMoves(teamName);
+
+    if (result.success) {
+      // Оповещаем всех клиентов о том, что у команды обновилось количество ходов
+      io.emit('move_update', { username: teamName, moves: result.moves });
+
+      // Возвращаем успешный ответ
+      res.json(result);
+    } else {
+      res.status(404).json(result);  // Если команда не найдена
+    }
+  } catch (error) {
+    console.error('Ошибка при обновлении ходов:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
 });
 
 app.get('/api/check-submission', (req, res) => {
@@ -1387,6 +1406,7 @@ io.on('connection', (socket) => {
     }
   });
 
+
   // Обработка отключений
   socket.on("disconnect", () => {
     const username = Array.from(activeTeams).find(t => t === socket.username);
@@ -1480,25 +1500,6 @@ io.on('connection', (socket) => {
     io.emit('game_ended');
   });
 });
-
-// Чтение и запись данных в файлы (обертки для асинхронных функций)
-async function fetchTeamsFile() {
-  try {
-    const data = await fs.promises.readFile(teamsFilePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (err) {
-    console.error('Ошибка чтения файла команд:', err);
-    return [];
-  }
-}
-
-async function writeTeamsFile2(data) {
-  try {
-    await fs.promises.writeFile(teamsFilePath, JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.error('Ошибка записи файла команд:', err);
-  }
-}
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
