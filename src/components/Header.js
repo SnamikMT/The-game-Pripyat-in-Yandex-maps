@@ -169,13 +169,15 @@ const Header = ({
         return;
       }
   
-      // Очистка предыдущих данных
+      // Очистка предыдущих данных из localStorage
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('hasSubmitted_')) {
           localStorage.removeItem(key);
         }
       });
-      localStorage.removeItem('questions');
+      // Очистка оценок и вопросов
+      localStorage.removeItem('scores'); // Удаление оценок
+      localStorage.removeItem('questions'); // Удаление вопросов
   
       // Очистка ответов на сервере
       await axios.post(`${config.apiBaseUrl}/api/clear-answers`);
@@ -203,7 +205,6 @@ const Header = ({
     }
   };
   
-
   const handleEndGame = async () => {
     try {
       await axios.post(`${config.apiBaseUrl}/api/end-game`);
@@ -211,8 +212,11 @@ const Header = ({
       setGameStarted(false);
       setRemainingTime(0);
       setQuestions([]);
-      localStorage.removeItem('questions');
-  
+      
+      // Очистка данных из localStorage при завершении игры
+      localStorage.removeItem('scores'); // Удаление оценок
+      localStorage.removeItem('questions'); // Удаление вопросов
+      
       socket.emit('game_ended', { gameEnded: true });
   
       localStorage.setItem('gameEnded', 'true');
@@ -220,6 +224,7 @@ const Header = ({
       setErrorMessage('Ошибка завершения игры');
     }
   };
+  
 
   const confirmAndClearHistory = async () => {
     const isConfirmed = window.confirm('Вы уверены, что хотите очистить историю команд?');

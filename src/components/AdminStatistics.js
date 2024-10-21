@@ -15,6 +15,12 @@ const AdminStatistics = ({ team }) => {
 
   const isAdmin = team?.role === 'admin';
 
+  useEffect(() => {
+    const savedScores = JSON.parse(localStorage.getItem('scores')) || {};
+    setScores(savedScores);
+  }, []);
+
+
   // Fetch teams, answers, and questions on mount
   useEffect(() => {
     const fetchData = async () => {
@@ -43,8 +49,9 @@ const AdminStatistics = ({ team }) => {
 
     // Listen for new answers from Socket.io
     socket.on('new_answer', (newAnswer) => {
-      setAnswersData((prevAnswers) => [...prevAnswers, newAnswer]);
+      setAnswersData((prevAnswers = []) => [...prevAnswers, newAnswer]);
     });
+
 
     return () => {
       socket.off('new_answer');
@@ -89,6 +96,9 @@ const handleScoreChange = async (team, questionIndex, score) => {
     [`${team}-${questionIndex}`]: score,
   };
   setScores(updatedScores);
+
+  // Сохраняем обновленные баллы в localStorage
+  localStorage.setItem('scores', JSON.stringify(updatedScores));
 
   try {
     // Send updated score to the server
@@ -306,42 +316,47 @@ return (
                   </p>
 
                   <ul>
-                    {Object.entries(answer.answers).map(([qIndex, ans]) => {
-                      const question = questions[qIndex];
-                      const questionText = question ? question.text : `Вопрос ${qIndex}`;
-                      const minScore = question ? question.minScore : 0;
-                      const maxScore = question ? question.maxScore : 10;
-                      const isGraded = ans.graded;
+                  {Object.entries(answer.answers).map(([qIndex, ans]) => {
+                    const question = questions[qIndex];
+                    const questionText = question ? question.text : `Вопрос ${qIndex}`;
+                    const minScore = question ? question.minScore : 0;
+                    const maxScore = question ? question.maxScore : 10;
+                    const isGraded = ans.graded;
+                    const savedScore = scores[`${answer.team}-${qIndex}`] || ans.score; // Получаем сохраненный балл или текущий
 
-                      return (
-                        <li key={`question-${answer.team}-${qIndex}`}>
-                          <strong>{questionText}:</strong> <h4 className='ans'>{ans.text}</h4>
-                          <div className="score-input">
-                            {isGraded ? (
-                              <span>Балл &#10003;</span>
-                            ) : (
-                              <div className="radio-group">
-                                {[...Array(maxScore - minScore + 1)].map((_, i) => (
+                    return (
+                      <li key={`question-${answer.team}-${qIndex}`}>
+                        <strong>{questionText}:</strong> <h4 className='ans'>{ans.text}</h4>
+                        <div className="score-input">
+                          {isGraded ? (
+                            <span>Балл: {savedScore} &#10003;</span>  // Показываем количество баллов
+                          ) : (
+                            <div className="radio-group">
+                              {[...Array(maxScore - minScore + 1)].map((_, i) => {
+                                const scoreValue = minScore + i;
+                                return (
                                   <label key={i} className="radio-label">
                                     <input
                                       type="radio"
                                       name={`score-${answer.team}-${qIndex}`}
-                                      value={minScore + i}
-                                      onChange={() => handleScoreChange(answer.team, qIndex, minScore + i)}
+                                      value={scoreValue}
+                                      checked={savedScore === scoreValue} // Отмечаем радиобаттон как выбранный
+                                      onChange={() => handleScoreChange(answer.team, qIndex, scoreValue)}
                                       className="radio-input"
                                     />
-                                    <span className="radio-text">{minScore + i}</span>
+                                    <span className="radio-text">{scoreValue}</span>
                                   </label>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </li>
-                      );
-                      
-                      
-                    })}
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+
                   </ul>
+
                 </div>
               ))
             ) : (
