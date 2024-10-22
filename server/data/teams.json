@@ -4,18 +4,13 @@
     "role": "user",
     "isPrepared": false,
     "inGame": true,
-    "moves": 4,
+    "moves": 5,
     "answers": [],
     "history": [
       {
-        "blockNumber": 9,
-        "category": "А (люди)",
-        "timestamp": "2024-10-19T11:45:34.931Z"
-      },
-      {
-        "blockNumber": 6,
-        "category": "А (люди)",
-        "timestamp": "2024-10-19T11:45:48.839Z"
+        "blockNumber": 4,
+        "category": "Б (предметы)",
+        "timestamp": "2024-10-22T13:01:47.144Z"
       }
     ],
     "reward": 36,
@@ -28,38 +23,7 @@
     "inGame": true,
     "moves": 22,
     "answers": [],
-    "history": [
-      {
-        "blockNumber": 6,
-        "category": "Б (предметы)",
-        "timestamp": "2024-10-19T11:43:02.498Z"
-      },
-      {
-        "blockNumber": 2,
-        "category": "С (транспорт и строения)",
-        "timestamp": "2024-10-19T11:46:37.639Z"
-      },
-      {
-        "blockNumber": 8,
-        "category": "С (транспорт и строения)",
-        "timestamp": "2024-10-19T12:03:18.315Z"
-      },
-      {
-        "blockNumber": 10,
-        "category": "С (транспорт и строения)",
-        "timestamp": "2024-10-19T12:03:27.966Z"
-      },
-      {
-        "blockNumber": 11,
-        "category": "Б (предметы)",
-        "timestamp": "2024-10-19T12:08:25.607Z"
-      },
-      {
-        "blockNumber": 12,
-        "category": "Б (предметы)",
-        "timestamp": "2024-10-19T12:08:34.855Z"
-      }
-    ],
+    "history": [],
     "reward": 2000,
     "points": 209
   },
@@ -68,9 +32,20 @@
     "role": "user",
     "isPrepared": false,
     "inGame": true,
-    "moves": 3,
+    "moves": 5,
     "answers": [],
-    "history": [],
+    "history": [
+      {
+        "blockNumber": 6,
+        "category": "А (люди)",
+        "timestamp": "2024-10-22T13:02:12.544Z"
+      },
+      {
+        "blockNumber": 5,
+        "category": "Б (предметы)",
+        "timestamp": "2024-10-22T13:03:00.038Z"
+      }
+    ],
     "reward": 5.333333333333333,
     "points": 33
   },
@@ -81,13 +56,7 @@
     "inGame": true,
     "moves": 3,
     "answers": [],
-    "history": [
-      {
-        "blockNumber": 5,
-        "category": "А (люди)",
-        "timestamp": "2024-10-19T11:46:22.608Z"
-      }
-    ],
+    "history": [],
     "reward": 133.33333333333334,
     "points": 20
   },
@@ -101,5 +70,13 @@
     "history": [],
     "reward": 1.1428571428571428,
     "points": 4
+  },
+  {
+    "username": "ком 4",
+    "role": "user",
+    "isPrepared": false,
+    "inGame": false,
+    "moves": 0,
+    "answers": []
   }
 ]

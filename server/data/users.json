@@ -2,7 +2,7 @@
   "users": [
     {
       "username": "admin",
-      "password": "123",
+      "password": "1234567890",
       "role": "admin",
       "isHidden": false
     },
@@ -13,32 +13,26 @@
       "isHidden": true
     },
     {
-      "username": "rob",
-      "password": "444",
-      "role": "user",
-      "isHidden": false
-    },
-    {
       "username": "ком 1",
-      "password": "123",
+      "password": "1",
       "role": "user",
       "isHidden": false
     },
     {
       "username": "ком 2",
-      "password": "123",
-      "role": "user",
-      "isHidden": false
-    },
-    {
-      "username": "test",
-      "password": "123",
+      "password": "2",
       "role": "user",
       "isHidden": false
     },
     {
       "username": "ком 3",
-      "password": "123",
+      "password": "3",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "ком 4",
+      "password": "4",
       "role": "user",
       "isHidden": false
     }
