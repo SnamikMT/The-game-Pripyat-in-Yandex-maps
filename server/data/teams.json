@@ -1,105 +1,23 @@
 [
   {
-    "username": "rob",
+    "username": "команда 1",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
-    "moves": 0,
-    "answers": [],
-    "history": [],
-    "reward": 0,
-    "points": 0
-  },
-  {
-    "username": "ком 1",
-    "role": "user",
-    "isPrepared": false,
-    "inGame": true,
-    "moves": 0,
-    "answers": [],
-    "history": [],
-    "reward": 0,
-    "points": 0
-  },
-  {
-    "username": "ком 2",
-    "role": "user",
-    "isPrepared": false,
-    "inGame": true,
-    "moves": 0,
-    "answers": [],
-    "history": [],
-    "reward": 0,
-    "points": 0
-  },
-  {
-    "username": "test",
-    "role": "user",
-    "isPrepared": false,
-    "inGame": true,
-    "moves": 0,
-    "answers": [],
-    "history": [],
-    "reward": 0,
-    "points": 0
-  },
-  {
-    "username": "ком 3",
-    "role": "user",
-    "isPrepared": false,
-    "inGame": true,
-    "moves": 0,
-    "answers": [],
-    "history": [],
-    "reward": 0,
-    "points": 0
-  },
-  {
-    "username": "ком 4",
-    "role": "user",
-    "isPrepared": false,
-    "inGame": true,
-    "moves": 0,
-    "answers": [],
-    "history": [],
-    "reward": 0,
-    "points": 0
-  },
-  {
-    "username": "ком 15",
-    "role": "user",
-    "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [
       {
-        "blockNumber": 6,
+        "blockNumber": 5,
         "category": "А (люди)",
-        "timestamp": "2025-08-19T06:08:57.084Z"
+        "timestamp": "2025-08-25T22:49:48.006Z"
       },
       {
-        "blockNumber": 8,
+        "blockNumber": 3,
         "category": "А (люди)",
-        "timestamp": "2025-08-19T06:09:41.753Z"
-      },
-      {
-        "blockNumber": 9,
-        "category": "А (люди)",
-        "timestamp": "2025-08-19T06:09:53.151Z"
+        "timestamp": "2025-08-25T22:50:00.691Z"
       }
     ],
-    "reward": 0,
-    "points": 0
-  },
-  {
-    "username": "команда 1",
-    "role": "user",
-    "isPrepared": false,
-    "inGame": true,
-    "moves": 0,
-    "answers": [],
-    "history": [],
     "reward": 0,
     "points": 0
   },
@@ -107,7 +25,7 @@
     "username": "команда 2",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -118,7 +36,7 @@
     "username": "команда 3",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -129,7 +47,7 @@
     "username": "команда 4",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -140,7 +58,7 @@
     "username": "команда 5",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -151,7 +69,7 @@
     "username": "команда 6",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -162,26 +80,10 @@
     "username": "команда 7",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
-    "history": [
-      {
-        "blockNumber": 8,
-        "category": "А (люди)",
-        "timestamp": "2025-08-19T06:29:40.507Z"
-      },
-      {
-        "blockNumber": 7,
-        "category": "А (люди)",
-        "timestamp": "2025-08-19T06:29:43.401Z"
-      },
-      {
-        "blockNumber": 3,
-        "category": "С (транспорт и строения)",
-        "timestamp": "2025-08-19T07:57:16.076Z"
-      }
-    ],
+    "history": [],
     "reward": 0,
     "points": 0
   },
@@ -189,36 +91,10 @@
     "username": "команда 8",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
-    "history": [
-      {
-        "blockNumber": 7,
-        "category": "А (люди)",
-        "timestamp": "2025-08-19T06:28:15.899Z"
-      },
-      {
-        "blockNumber": 7,
-        "category": "Б (предметы)",
-        "timestamp": "2025-08-19T06:28:21.400Z"
-      },
-      {
-        "blockNumber": 5,
-        "category": "А (люди)",
-        "timestamp": "2025-08-19T07:18:02.466Z"
-      },
-      {
-        "blockNumber": 9,
-        "category": "Б (предметы)",
-        "timestamp": "2025-08-19T07:36:48.428Z"
-      },
-      {
-        "blockNumber": 3,
-        "category": "С (транспорт и строения)",
-        "timestamp": "2025-08-19T07:53:26.682Z"
-      }
-    ],
+    "history": [],
     "reward": 0,
     "points": 0
   },
@@ -226,7 +102,7 @@
     "username": "команда 9",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -237,7 +113,7 @@
     "username": "команда 10",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -248,7 +124,7 @@
     "username": "команда 11",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -259,7 +135,7 @@
     "username": "команда 12",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -270,7 +146,7 @@
     "username": "команда 13",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -281,7 +157,7 @@
     "username": "команда 14",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],
@@ -292,7 +168,7 @@
     "username": "команда 15",
     "role": "user",
     "isPrepared": false,
-    "inGame": true,
+    "inGame": false,
     "moves": 0,
     "answers": [],
     "history": [],

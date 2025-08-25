@@ -3,6 +3,8 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import '../style/AdminStatistics.css';
 import config from './config';
+import { saveAs } from 'file-saver';
+
 
 const socket = io(config.socketUrl);
 
@@ -260,6 +262,37 @@ const calculateRewards = async () => {
   }
 };
 
+
+const copyTableToClipboard = () => {
+  const table = document.querySelector('.teams-table tbody');
+  const rows = Array.from(table.querySelectorAll('tr'));
+  let clipboardContent = '';
+
+  // Создаем заголовок
+  clipboardContent += 'Команда\tХоды\tОчки\tНаграда\n';
+
+  // Заполняем данными
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    const rowData = [
+      cells[0].innerText, // Команда
+      cells[1].innerText, // Ходы
+      cells[2].querySelector('input')?.value || cells[2].innerText, // Очки
+      cells[3].innerText // Награда
+    ];
+    
+    clipboardContent += rowData.join('\t') + '\n';
+  });
+
+  navigator.clipboard.writeText(clipboardContent)
+    .then(() => {
+      alert('Таблица скопирована в буфер обмена');
+    })
+    .catch(err => {
+      console.error('Ошибка копирования:', err);
+    });
+};
+
 return (
   <div className="admin-statistics">
     <h2>СТАТИСТИКА</h2>
@@ -297,6 +330,9 @@ return (
 
       {isAdmin && (
         <>
+          <button onClick={copyTableToClipboard} className="action-button">
+            Скопировать в буфер
+          </button>
           <button onClick={calculateRewards} className="action-button gon">Рассчитать Гонорар</button>
           <button onClick={clearRewards} className="action-button">Очистить Гонорар</button>
           <button onClick={confirmAndClearAllData} className="action-button">Очистить Всё</button>
