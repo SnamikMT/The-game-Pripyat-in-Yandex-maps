@@ -13,26 +13,92 @@
       "isHidden": true
     },
     {
-      "username": "ком 1",
-      "password": "1",
+      "username": "команда 1",
+      "password": "hfzoa",
       "role": "user",
       "isHidden": false
     },
     {
-      "username": "ком 2",
-      "password": "2",
+      "username": "команда 2",
+      "password": "ocpsm",
       "role": "user",
       "isHidden": false
     },
     {
-      "username": "ком 3",
-      "password": "3",
+      "username": "команда 3",
+      "password": "nhjsu",
       "role": "user",
       "isHidden": false
     },
     {
-      "username": "ком 4",
-      "password": "4",
+      "username": "команда 4",
+      "password": "pydmk",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 5",
+      "password": "afqarg",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 6",
+      "password": "cbgeyu",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 7",
+      "password": "ctdrf",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 8",
+      "password": "jcmvei",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 9",
+      "password": "Ltdznm",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 10",
+      "password": "Ltcznm",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 11",
+      "password": "Jlywlw",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 12",
+      "password": "Ldylwn",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 13",
+      "password": "Nhylcn",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 14",
+      "password": "Xnhylw",
+      "role": "user",
+      "isHidden": false
+    },
+    {
+      "username": "команда 15",
+      "password": "Gnyllw",
       "role": "user",
       "isHidden": false
     }
